@@ -17,10 +17,21 @@ import { db, auth } from "./firebase.js";
 import {
   GoogleAuthProvider,
   signInWithPopup,
-  onAuthStateChanged
+  onAuthStateChanged,
+  signOut
 } from "https://www.gstatic.com/firebasejs/13.3.0/firebase-auth.js";
+const DEFAULT_IMAGE_URL = "https://toppng.com/uploads/preview/clipart-free-seaweed-clipart-draw-food-placeholder-11562968708qhzooxrjly.png";
+const logoutButton = document.querySelector("#logout");
 
-
+logoutButton?.addEventListener("click", async () => {
+  try {
+    await signOut(auth);
+    window.location.replace("welcome.html");
+  } catch (error) {
+    console.error("Logout failed:", error);
+    alert("Could not log out.");
+  }
+});
 let editingRecipeId = null;
 const editButton = document.querySelector("#edit-recipe");
 
@@ -46,7 +57,7 @@ editButton?.addEventListener("click", () => {
     recipe.name || recipe.title || "";
 
   document.querySelector("#image").value =
-    recipe.image || "";
+    recipe.image || DEFAULT_IMAGE_URL;
 
   document.querySelector("#tags").value =
     Array.isArray(recipe.tags)
@@ -132,7 +143,7 @@ form?.addEventListener("submit", async (event) => {
 
   const recipe = {
     name: document.querySelector("#recipe-name").value.trim(),
-    image: document.querySelector("#image").value.trim(),
+    image: document.querySelector("#image").value.trim() || DEFAULT_IMAGE_URL,
     tags: document.querySelector("#tags").value
       .split(",")
       .map((tag) => tag.trim())
