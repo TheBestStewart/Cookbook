@@ -70,6 +70,8 @@ editButton?.addEventListener("click", () => {
 
   document.querySelector("#ingredients").value =
     recipe.ingredients || "";
+  document.querySelector("#source").value =
+    recipe.source || "";
 
   document.querySelector("#instructions").value =
     recipe.instructions || "";
@@ -117,58 +119,59 @@ if (loginButton) {
 
 export { loggedIn };
 const form = document.querySelector("#form");
-const itemsList = document.querySelector("#items-list");
-onAuthStateChanged(auth, (user) => {
-  if (!form) return;
 
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
+form?.addEventListener("submit", async (event) => {
+  event.preventDefault();
 
-    if (!user) {
-      alert("Please sign in before creating a recipe.");
-      return;
+  const user = auth.currentUser;
+
+  if (!user) {
+    alert("Please sign in before creating a recipe.");
+    return;
+  }
+
+  const recipe = {
+    name: document.querySelector("#recipe-name").value.trim(),
+    image: document.querySelector("#image").value.trim(),
+    tags: document.querySelector("#tags").value
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter(Boolean),
+    prepTime: document.querySelector("#prep-time").value.trim(),
+    cookTime: document.querySelector("#cook-time").value.trim(),
+    totalTime: document.querySelector("#total-time").value.trim(),
+    description: document.querySelector("#description").value.trim(),
+    servings: document.querySelector("#servings").value.trim(),
+    ingredients: document.querySelector("#ingredients").value.trim(),
+    source: document.querySelector("#source").value.trim(),
+    instructions: document.querySelector("#instructions").value.trim(),
+    notes: document.querySelector("#notes").value.trim(),
+    ownerId: user.uid
+  };
+
+  try {
+    if (editingRecipeId) {
+      await updateDoc(doc(db, "items", editingRecipeId), {
+        ...recipe,
+        updatedAt: serverTimestamp()
+      });
+
+      alert("Recipe updated.");
+      editingRecipeId = null;
+    } else {
+      await addDoc(collection(db, "items"), {
+        ...recipe,
+        createdAt: serverTimestamp()
+      });
+
+      alert("Recipe created.");
     }
 
-    const recipe = {
-      name: document.querySelector("#recipe-name").value.trim(),
-      image: document.querySelector("#image").value.trim(),
-      tags: document.querySelector("#tags").value
-        .split(",")
-        .map((tag) => tag.trim())
-        .filter(Boolean),
-      prepTime: document.querySelector("#prep-time").value.trim(),
-      cookTime: document.querySelector("#cook-time").value.trim(),
-      totalTime: document.querySelector("#total-time").value.trim(),
-      description: document.querySelector("#description").value.trim(),
-      servings: document.querySelector("#servings").value.trim(),
-      ingredients: document.querySelector("#ingredients").value.trim(),
-      source: document.querySelector("#source").value.trim(),
-      instructions: document.querySelector("#instructions").value.trim(),
-      notes: document.querySelector("#notes").value.trim(),
-      ownerId: user.uid,
-      createdAt: serverTimestamp()
-    };
-
-    try {
-      if (editingRecipeId) {
-        await updateDoc(
-          doc(db, "items", editingRecipeId),
-          recipe
-        );
-
-        alert("Recipe updated.");
-        editingRecipeId = null;
-      } else {
-        await addDoc(collection(db, "items"), recipe);
-        alert("Recipe created.");
-      }
-
-      form.reset();
-    } catch (error) {
-      console.error("Error saving recipe:", error);
-      alert("Could not save recipe.");
-    }
-  });
+    form.reset();
+  } catch (error) {
+    console.error("Error saving recipe:", error);
+    alert("Could not save recipe.");
+  }
 });
 
 
@@ -462,7 +465,6 @@ confirmButton?.addEventListener("click", async (event) => {
       notes: recipe.notes || "",
       date,
       ownerId: user.uid,
-      createdAt: serverTimestamp()
     });
 
     console.log("Saved recipe ID:", recipe.id);
