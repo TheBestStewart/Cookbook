@@ -13,7 +13,6 @@
     <span class="site-brand">Simplify</span>
     <a href="cookbook.html" class="nav-link">Cookbook</a>
     <a href="planner.html" class="nav-link" aria-current="page">Planner</a>
-    <a href="shopping-list.html" class="nav-link">Shop</a>
     </nav>
     </header>
     <main>
@@ -35,6 +34,7 @@
           <h2>Recipe search</h2>
           <label for="planner-recipe-search">Search recipes</label>
           <input id="planner-recipe-search" type="search" placeholder="Search recipes...">
+          <div id="planner-recipe-results" class="planner-recipe-results" aria-live="polite"></div>
         </aside>
 
         <section class="planner-main" aria-label="Meal calendar">
@@ -45,13 +45,13 @@
         <aside id="grocery-drawer" class="planner-drawer grocery-drawer" aria-label="Grocery list">
           <h2>Grocery list</h2>
           <p>Ingredients to pick up for your planned meals.</p>
-          <ul class="grocery-list">
+          <ul id="planner-grocery-list" class="grocery-list">
             <li>Chicken breasts</li>
             <li>Marinara sauce</li>
             <li>Mozzarella</li>
           </ul>
-          <a class="planner-drawer-action" href="shopping-list.html">Open full grocery list</a>
         </aside>
+
       </div>
     </main>
 <script>
@@ -64,6 +64,64 @@
     const recipeSearchToggle = document.getElementById("recipe-search-toggle");
     const groceryToggle = document.getElementById("grocery-toggle");
     const mobileAgenda = document.getElementById("mobile-agenda");
+    const plannerRecipeSearch = document.getElementById("planner-recipe-search");
+    const plannerRecipeResults = document.getElementById("planner-recipe-results");
+    let plannerRecipes = [];
+
+    function normalizeSearchText(value) {
+      return String(value || "").trim().toLowerCase();
+    }
+
+    function renderPlannerRecipeResults() {
+      const searchText = normalizeSearchText(plannerRecipeSearch.value);
+      const matchingRecipes = plannerRecipes.filter((recipe) => {
+        const tags = Array.isArray(recipe.tags) ? recipe.tags : [];
+        const searchableText = [
+          recipe.title,
+          recipe.name,
+          recipe.description,
+          ...tags
+        ].join(" ").toLowerCase();
+
+        return searchableText.includes(searchText);
+      });
+
+      plannerRecipeResults.replaceChildren();
+
+      if (!searchText) return;
+
+      if (!matchingRecipes.length) {
+        const emptyMessage = document.createElement("p");
+        emptyMessage.textContent = "No recipes found.";
+        plannerRecipeResults.appendChild(emptyMessage);
+        return;
+      }
+
+      matchingRecipes.forEach((recipe) => {
+        const result = document.createElement("a");
+        result.className = "planner-recipe-result";
+        result.href = `cookbook.html?recipeId=${encodeURIComponent(recipe.id)}`;
+
+        const title = document.createElement("strong");
+        title.textContent = recipe.title || recipe.name || "Untitled recipe";
+        result.appendChild(title);
+
+        if (Array.isArray(recipe.tags) && recipe.tags.length) {
+          const tags = document.createElement("span");
+          tags.textContent = recipe.tags.join(", ");
+          result.appendChild(tags);
+        }
+
+        plannerRecipeResults.appendChild(result);
+      });
+    }
+
+    plannerRecipeSearch.addEventListener("input", renderPlannerRecipeResults);
+
+    window.addEventListener("firebase-recipes-loaded", (event) => {
+      plannerRecipes = event.detail;
+      renderPlannerRecipeResults();
+    });
 
     let displayedDate = new Date();
 
