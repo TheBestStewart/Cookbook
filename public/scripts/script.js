@@ -1,9 +1,8 @@
 import {
   collection,
   addDoc,
-  updateDoc,
   doc,
-  deleteDoc,
+  updateDoc,
   getDocs,
   onSnapshot,
   or,
@@ -387,55 +386,7 @@ onAuthStateChanged(auth, (user) => {
       console.error("Items listener failed:", error);
     }
   );
-const ingredientTotals = new Map();
 
-snapshot.forEach((doc) => {
-  const mealPlan = doc.data();
-
-  String(mealPlan.ingredients || "")
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .forEach((line) => {
-      const parsed = parseIngredient(line);
-
-      if (!parsed) return;
-
-      const key = `${parsed.name}|${parsed.unit}`;
-
-      if (!ingredientTotals.has(key)) {
-        ingredientTotals.set(key, {
-          name: parsed.name,
-          unit: parsed.unit,
-          quantity: 0
-        });
-      }
-
-      ingredientTotals.get(key).quantity += parsed.quantity;
-    });
-});
-
-renderShoppingList([...ingredientTotals.values()]);
-function parseIngredient(line) {
-  const match = line.match(
-    /^(\d+(?:\.\d+)?|\d+\s*\/\s*\d+)\s*([a-zA-Z]*)\s+(.+)$/
-  );
-
-  if (!match) {
-    return null;
-  }
-
-  const quantityText = match[1].replace(/\s/g, "");
-  const quantity = quantityText.includes("/")
-    ? quantityText.split("/").reduce((a, b) => Number(a) / Number(b))
-    : Number(quantityText);
-
-  return {
-    quantity,
-    unit: match[2] || "",
-    name: match[3].toLowerCase()
-  };
-}
 function renderShoppingList(ingredients) {
   shoppingList.replaceChildren();
 
