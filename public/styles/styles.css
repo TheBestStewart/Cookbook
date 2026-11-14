@@ -116,6 +116,15 @@ textarea {
   color: inherit;
   font: inherit;
 }
+button {
+  background-color: cornflowerblue;
+  border: 2px solid navy;
+  border-radius: 5px;
+}
+button:hover {
+  background-color: rgb(131, 168, 235);
+  cursor: pointer;
+}
 
 button:focus-visible,
 input:focus-visible,
