@@ -5,22 +5,22 @@
 }
 
 :root {
-  --color-background: #f5f1e6;
-  --color-surface: #fffdf6;
-  --color-text: #21352b;
-  --color-muted: #66756c;
-  --color-accent: #3f6b50;
-  --color-accent-dark: #28513a;
-  --color-border: #d8d6c8;
-  --color-surface-hover: #eef4ec;
-  --color-nav-hover: #e5eee5;
-  --color-surface-muted: #eeeee7;
-  --color-today: #e8f1e8;
-  --color-calendar-item: #dce9d8;
-  --color-calendar-item-text: #234632;
-  --color-image-overlay: rgba(255, 253, 246, 0.65);
-  --color-overlay-backdrop: rgba(26, 43, 34, 0.38);
-  --color-focus: rgba(63, 107, 80, 0.35);
+  --color-background: #f2f5f9;
+  --color-surface: #ffffff;
+  --color-text: #17243a;
+  --color-muted: #5e6b7d;
+  --color-accent: #173b6c;
+  --color-accent-dark: #0b2344;
+  --color-border: #cbd5e1;
+  --color-surface-hover: #e8eef7;
+  --color-nav-hover: #dce8f5;
+  --color-surface-muted: #e7edf5;
+  --color-today: #d9e7f7;
+  --color-calendar-item: #b8cce6;
+  --color-calendar-item-text: #102a4a;
+  --color-image-overlay: rgba(255, 255, 255, 0.68);
+  --color-overlay-backdrop: rgba(11, 31, 58, 0.42);
+  --color-focus: rgba(23, 59, 108, 0.35);
   --radius-sm: 0.5rem;
   --radius-md: 0.85rem;
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
@@ -67,17 +67,28 @@ h6 {
   font-family: 'Fraunces', Georgia, serif;
 }
 
-.site-nav a {
+.site-nav a,
+.site-nav button,
+.nav-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 0.5rem 0.85rem;
   color: inherit;
   text-decoration: none;
   border: 1px solid transparent;
   border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
   transition: color 150ms ease, background 150ms ease, box-shadow 150ms ease;
 }
 
 .site-nav a:hover,
-.site-nav a:focus-visible {
+.site-nav a:focus-visible,
+.site-nav button:hover,
+.site-nav button:focus-visible,
+.nav-button:hover,
+.nav-button:focus-visible {
   color: var(--color-accent);
   background: var(--color-nav-hover);
   border-color: var(--color-border);
@@ -101,7 +112,8 @@ h6 {
     margin-right: 0;
   }
 
-  .site-nav a {
+  .site-nav a,
+  .site-nav button {
     padding: 0.45rem 0.6rem;
   }
 }
