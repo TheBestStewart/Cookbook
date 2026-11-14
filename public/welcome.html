@@ -8,18 +8,38 @@
     <script type="module" src="scripts/script.js" defer></script>
     <link rel="stylesheet" href="styles/styles.css">
     <style>
-        main {
+        header {
             display: flex;
             justify-content: flex-end;
+            background-color: white;
         }
         button {
             margin: 1em;
         }
+        img {
+            width: 45%;
+        }
+        div {
+            display: flex;
+            justify-content: space-around;
+        }
+        h1, p {
+            margin: 0.5em 1.5em;
+        }
     </style>
+
 </head>
 <body>
-    <main>
+    <header>
         <button id="login" class="nav-button" type="button">Log In</button>
+    </header>
+    <main>
+        <h1>Welcome to Mise!</h1>
+        <p>Have you ever wanted to keep all of your recipes in the same place? Mise can offer that and more! Log in with your google account and get started immediately!</p>
+        <div>
+            <img src="Screenshot 2026-11-14 150239.png">
+            <img src="Screenshot 2026-11-14 150339.png">
+        </div>
     </main>
 </body>
 </html>
