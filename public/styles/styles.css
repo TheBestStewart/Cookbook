@@ -118,7 +118,7 @@ textarea {
 }
 button {
   background-color: cornflowerblue;
-  border: 2px solid navy;
+  border: 1px solid navy;
   border-radius: 5px;
 }
 button:hover {
