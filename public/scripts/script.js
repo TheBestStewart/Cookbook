@@ -18,6 +18,35 @@ import {
 
 const provider = new GoogleAuthProvider();
 
+// Check login status
+function loggedIn() {
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            window.location.replace("cookbook.html");
+        } else {
+            window.location.replace("welcome.html");
+        }
+    });
+}
+
+// Login button
+const loginButton = document.getElementById("login");
+
+if (loginButton) {
+    loginButton.addEventListener("click", async () => {
+        try {
+            const result = await signInWithPopup(auth, provider);
+
+            console.log("Logged in:", result.user.displayName);
+
+            window.location.replace("cookbook.html");
+        } catch (error) {
+            console.error("Login failed:", error.code, error.message);
+        }
+    });
+}
+
+export { loggedIn };
 const form = document.querySelector("#form");
 const itemsList = document.querySelector("#items-list");
 onAuthStateChanged(auth, (user) => {
@@ -117,16 +146,6 @@ function escapeHtml(value) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 }
-function loggedIn() {
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            window.location.replace("cookbook.html");
-        } else {
-            window.location.replace("welcome.html");
-        }
-    });
-}
-export {loggedIn};
 
 let savedItems = [];
 
