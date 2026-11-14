@@ -347,18 +347,18 @@ body {
   font-size: 1rem;
 }
 
-#add-recipe-form {
+#form {
   display: grid;
   gap: 0.5rem;
 }
 
-#add-recipe-form label,
+#form label,
 .recipe-url-import label {
   font-weight: 600;
 }
 
-#add-recipe-form input,
-#add-recipe-form textarea,
+#form input,
+#form textarea,
 .recipe-url-import input {
   width: 100%;
   padding: 0.5rem;
@@ -368,11 +368,11 @@ body {
   background: var(--color-background);
 }
 
-#add-recipe-form textarea {
+#form textarea {
   resize: vertical;
 }
 
-#add-recipe-form > button {
+#form > button {
   position: sticky;
   bottom: 0;
   width: 100%;
@@ -398,7 +398,7 @@ body {
   cursor: pointer;
 }
 
-#add-recipe-form > button:hover,
+#form > button:hover,
 .filters > button:hover {
   border-color: var(--color-accent);
   background: var(--color-surface-hover);
