@@ -54,6 +54,10 @@
 
       </div>
     </main>
+    <div id="calendar-trash" class="calendar-trash" aria-hidden="true">
+  <span aria-hidden="true" id="trash"><img src="trash.svg"></span>
+  <span id="trash-text">Delete items here</span>
+</div>
 <script>
     const calendar = document.getElementById("calendar");
     const monthTitle = document.querySelector("h1");
@@ -66,6 +70,8 @@
     const mobileAgenda = document.getElementById("mobile-agenda");
     const plannerRecipeSearch = document.getElementById("planner-recipe-search");
     const plannerRecipeResults = document.getElementById("planner-recipe-results");
+    const tog = document.getElementById("trash");
+    const togl = document.getElementById("trash-text");
     let plannerRecipes = [];
 
     function normalizeSearchText(value) {
@@ -101,7 +107,7 @@
         const result = document.createElement("a");
         result.className = "planner-recipe-result";
         result.href = `cookbook.html?recipeId=${encodeURIComponent(recipe.id)}`;
-
+        
         const title = document.createElement("strong");
         title.textContent = recipe.title || recipe.name || "Untitled recipe";
         result.appendChild(title);
@@ -111,11 +117,21 @@
           tags.textContent = recipe.tags.join(", ");
           result.appendChild(tags);
         }
+        result.draggable = true;
 
+result.addEventListener("dragstart", (event) => {
+  tog.classList.add("show");
+  togl.classList.add("show");
+  event.dataTransfer.effectAllowed = "copy";
+  event.dataTransfer.setData(
+    "application/x-cookbook-recipe",
+    JSON.stringify(recipe)
+  );
+});
         plannerRecipeResults.appendChild(result);
       });
     }
-
+    
     plannerRecipeSearch.addEventListener("input", renderPlannerRecipeResults);
 
     window.addEventListener("firebase-recipes-loaded", (event) => {
@@ -228,7 +244,77 @@
         const dateValue = `${cellDate.getFullYear()}-${String(cellDate.getMonth() + 1).padStart(2, "0")}-${String(cellDate.getDate()).padStart(2, "0")}`;
         day.dataset.date = dateValue;
         day.setAttribute("aria-label", day.dataset.date);
+        day.addEventListener("dragover", (event) => {
+  const types = event.dataTransfer.types;
+  tog.classList.toggle("show");
+  togl.classList.toggle("show");
 
+  if (
+    types.includes("application/x-cookbook-recipe") ||
+    types.includes("application/x-cookbook-meal-plan")
+  ) {
+    event.preventDefault();
+    event.dataTransfer.dropEffect =
+      types.includes("application/x-cookbook-meal-plan")
+        ? "move"
+        : "copy";
+
+    day.classList.add("drag-over");
+  }
+});
+
+day.addEventListener("dragleave", () => {
+  day.classList.remove("drag-over");
+  tog.classList.remove("show");
+  togl.classList.remove("show");
+});
+
+day.addEventListener("drop", (event) => {
+  event.preventDefault();
+  day.classList.remove("drag-over");
+  tog.classList.remove("show");
+  togl.classList.remove("show");
+
+  try {
+    const mealPlanData = event.dataTransfer.getData(
+      "application/x-cookbook-meal-plan"
+    );
+
+    if (mealPlanData) {
+      const { mealPlanId } = JSON.parse(mealPlanData);
+
+      window.dispatchEvent(
+        new CustomEvent("meal-plan-dropped-on-calendar", {
+          detail: {
+            mealPlanId,
+            date: day.dataset.date
+          }
+        })
+      );
+
+      return;
+    }
+
+    const recipeData = event.dataTransfer.getData(
+      "application/x-cookbook-recipe"
+    );
+
+    if (recipeData) {
+      const recipe = JSON.parse(recipeData);
+
+      window.dispatchEvent(
+        new CustomEvent("recipe-dropped-on-calendar", {
+          detail: {
+            recipe,
+            date: day.dataset.date
+          }
+        })
+      );
+    }
+  } catch (error) {
+    console.error("Could not process calendar drop:", error);
+  }
+});
         if (cellDate.getMonth() !== month) {
           day.classList.add("adjacent-month");
         }
@@ -285,9 +371,76 @@
       displayedDate.setMonth(displayedDate.getMonth() + 1);
       renderCalendar();
     });
-
     renderCalendar();
+    const calendarTrash = document.getElementById("calendar-trash");
 
+window.addEventListener("calendar-item-drag-start", () => {
+  calendarTrash.classList.add("visible");
+  calendarTrash.setAttribute("aria-hidden", "false");
+  tog.classList.add("show");
+  togl.classList.add("show");
+});
+
+window.addEventListener("calendar-item-drag-end", () => {
+  calendarTrash.classList.remove("visible", "drag-over");
+  calendarTrash.setAttribute("aria-hidden", "true");
+  tog.classList.remove("show");
+  togl.classList.remove("show");
+});
+
+calendarTrash.addEventListener("dragover", (event) => {
+  if (event.dataTransfer.types.includes("application/x-cookbook-meal-plan")) {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    calendarTrash.classList.add("drag-over");
+  tog.classList.remove("show");
+  togl.classList.remove("show");
+  }
+});
+
+calendarTrash.addEventListener("dragleave", () => {
+  calendarTrash.classList.remove("drag-over");
+  tog.classList.remove("show");
+  togl.classList.remove("show");
+});
+
+calendarTrash.addEventListener("drop", (event) => {
+  event.preventDefault();
+  calendarTrash.classList.remove("visible", "drag-over");
+  tog.classList.remove("show");
+  togl.classList.remove("show");
+
+  const data = event.dataTransfer.getData(
+    "application/x-cookbook-meal-plan"
+  );
+
+  if (!data) return;
+
+  const { mealPlanId } = JSON.parse(data);
+
+  window.dispatchEvent(
+    new CustomEvent("delete-meal-plan", {
+      detail: { mealPlanId }
+    })
+  );
+});
+window.dispatchEvent(
+  new CustomEvent("delete-meal-plan", {
+    detail: { mealPlanId }
+  })
+);
+window.addEventListener("delete-meal-plan", async (event) => {
+  const { mealPlanId } = event.detail || {};
+
+  if (!mealPlanId) return;
+
+  try {
+    await deleteDoc(doc(db, "mealPlans", mealPlanId));
+  } catch (error) {
+    console.error("Could not delete meal plan:", error);
+    alert("The planned recipe could not be removed.");
+  }
+});
     // Refresh only the current-day styling so planned items remain in place.
     setInterval(updateTodayHighlight, 60 * 1000);
 </script>
