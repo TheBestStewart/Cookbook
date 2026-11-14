@@ -4,6 +4,10 @@
   box-sizing: border-box;
 }
 
+li {
+  list-style: none;
+}
+
 :root {
   --color-background: #f2f5f9;
   --color-surface: #ffffff;
@@ -123,6 +127,15 @@ input,
 textarea {
   color: inherit;
   font: inherit;
+}
+button {
+  background-color: cornflowerblue;
+  border: 1px solid navy;
+  border-radius: 5px;
+}
+button:hover {
+  background-color: rgb(131, 168, 235);
+  cursor: pointer;
 }
 
 button:focus-visible,

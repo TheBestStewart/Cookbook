@@ -4,6 +4,7 @@ import {
   doc,
   updateDoc,
   getDocs,
+  deleteDoc,
   onSnapshot,
   or,
   query,
@@ -274,9 +275,27 @@ function renderCalendarItems() {
     matchingItems.forEach((item) => {
       const box = document.createElement("button");
 
-      box.type = "button";
-      box.className = "calendar-item";
-      box.textContent = item.name || "Recipe";
+box.type = "button";
+box.className = "calendar-item";
+box.textContent = item.name || "Recipe";
+box.draggable = true;
+
+box.addEventListener("dragstart", (event) => {
+  event.dataTransfer.effectAllowed = "move";
+
+  event.dataTransfer.setData(
+    "application/x-cookbook-meal-plan",
+    JSON.stringify({
+      mealPlanId: item.id
+    })
+  );
+
+  window.dispatchEvent(new CustomEvent("calendar-item-drag-start"));
+});
+
+box.addEventListener("dragend", () => {
+  window.dispatchEvent(new CustomEvent("calendar-item-drag-end"));
+});
 
       box.addEventListener("click", () => {
         if (!item.recipeId) {
@@ -500,5 +519,47 @@ deleteButton?.addEventListener("click", async () => {
     alert("The recipe could not be deleted.");
   }
 });
+window.addEventListener("recipe-dropped-on-calendar", async (event) => {
+  const { recipe, date } = event.detail;
+  const user = auth.currentUser;
 
+  if (!user) {
+    alert("Please sign in before planning a recipe.");
+    return;
+  }
+
+  await addDoc(collection(db, "mealPlans"), {
+    recipeId: recipe.id,
+    name: recipe.name || recipe.title || "Untitled recipe",
+    image: recipe.image || "",
+    description: recipe.description || "",
+    cookTime: recipe.cookTime || "",
+    ingredients: recipe.ingredients || "",
+    instructions: recipe.instructions || "",
+    notes: recipe.notes || "",
+    date,
+    ownerId: user.uid
+  });
+});
+window.addEventListener("meal-plan-dropped-on-calendar", async (event) => {
+  const { mealPlanId, date } = event.detail || {};
+
+  if (!mealPlanId || !date) return;
+
+  try {
+    await updateDoc(doc(db, "mealPlans", mealPlanId), {
+      date
+    });
+  } catch (error) {
+    console.error("Could not move meal plan:", error);
+    alert("The planned recipe could not be moved.");
+  }
+});
+window.addEventListener("delete-meal-plan", async (event) => {
+  const { mealPlanId } = event.detail || {};
+
+  if (!mealPlanId) return;
+
+  await deleteDoc(doc(db, "mealPlans", mealPlanId));
+});
 window.addEventListener("calendar-rendered", renderCalendarItems);
