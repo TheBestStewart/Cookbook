@@ -147,6 +147,7 @@
                     <p id="recipe-cook-time">Cook time: 30 minutes</p>
                     <p id="recipe-total-time">Total time: 60 minutes</p>
                     <p id="recipe-serving-size">Serves: 4</p>
+                    <p id="recipe-source">Source</p>
                 </section>
                 <section class="recipe-ingredients">
                     <h3>Ingredients</h3>
@@ -196,6 +197,7 @@
     const recipeCookTime = document.querySelector('#recipe-cook-time');
     const recipeTotalTime = document.querySelector('#recipe-total-time');
     const recipeServingSize = document.querySelector('#recipe-serving-size');
+    const recipeSource = document.querySelector('#recipe-source');
     const recipeIngredients = document.querySelector('#recipe-ingredients-list');
     const recipeInstructions = document.querySelector('#recipe-instructions-list');
     const recipeNotes = document.querySelector('#recipe-notes');
@@ -304,6 +306,8 @@ function openRecipeDetails(recipe) {
 
   recipeServingSize.textContent =
     "Serves: " + (recipe.servings || "");
+    recipeSource.textContent =
+    "Source: " + (recipe.source || "");
 
   const ingredients = linesToSections(
     recipe.ingredients,
