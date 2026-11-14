@@ -216,6 +216,7 @@ onAuthStateChanged(auth, (user) => {
       }));
 
       renderCalendarItems();
+      renderPlannerGroceryList(savedItems);
     },
     (error) => {
       console.error("MEAL PLANS listener failed:", error);
@@ -280,67 +281,45 @@ function renderCalendarItems() {
     });
   });
 }
-const shoppingList = document.querySelector("#shopping-list");
 
-if (shoppingList) {
-  onAuthStateChanged(auth, (user) => {
-    if (!user) return;
+function renderPlannerGroceryList(mealPlans) {
+  const groceryList = document.querySelector("#planner-grocery-list");
 
-    const plansQuery = query(
-      collection(db, "mealPlans"),
-      where("ownerId", "==", user.uid)
-    );
+  if (!groceryList) return;
 
-    onSnapshot(plansQuery, (snapshot) => {
-      const ingredients = [];
+  groceryList.replaceChildren();
 
-snapshot.forEach((doc) => {
-  const mealPlan = doc.data();
-  const recipeName = mealPlan.name || "Unknown recipe";
+  const ingredients = new Map();
 
-  String(mealPlan.ingredients || "")
-    .split("\n")
-    .map((ingredient) => ingredient.trim())
-    .filter(Boolean)
-    .forEach((ingredient) => {
-      ingredients.push({
-        text: ingredient,
-        recipeName
+  mealPlans.forEach((mealPlan) => {
+    String(mealPlan.ingredients || "")
+      .split("\n")
+      .map((ingredient) => ingredient.trim())
+      .filter(Boolean)
+      .forEach((ingredient) => {
+        const key = ingredient.toLowerCase();
+        if (!ingredients.has(key)) ingredients.set(key, ingredient);
       });
-    });
-});
-
-renderShoppingList(ingredients);
-    });
   });
-}
 
-function renderShoppingList(ingredients) {
-  shoppingList.replaceChildren();
+  if (!ingredients.size) {
+    const emptyItem = document.createElement("li");
+    emptyItem.textContent = "Plan a recipe to see ingredients here.";
+    groceryList.appendChild(emptyItem);
+    return;
+  }
 
-  const uniqueIngredients = [
-    ...new Map(
-      ingredients.map((item) => [
-        `${item.recipeName}|${item.text}`,
-        item
-      ])
-    ).values()
-  ];
-
-  uniqueIngredients.forEach((item) => {
+  [...ingredients.values()].forEach((ingredient) => {
     const listItem = document.createElement("li");
+    const label = document.createElement("label");
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    const text = document.createElement("span");
+    text.textContent = ingredient;
 
-    listItem.innerHTML = `
-      <label>
-        <input type="checkbox">
-        <span>
-          <strong>${escapeHtml(item.text)}</strong> from
-          <strong>${escapeHtml(item.recipeName)}</strong>
-        </span>
-      </label>
-    `;
-
-    shoppingList.appendChild(listItem);
+    label.append(checkbox, text);
+    listItem.appendChild(label);
+    groceryList.appendChild(listItem);
   });
 }
 
@@ -393,25 +372,6 @@ onAuthStateChanged(auth, (user) => {
     }
   );
 
-function renderShoppingList(ingredients) {
-  shoppingList.replaceChildren();
-
-  ingredients.forEach((item) => {
-    const listItem = document.createElement("li");
-
-    listItem.innerHTML = `
-      <label>
-        <input type="checkbox">
-        <span>
-          <strong>${item.quantity} ${item.unit}</strong>
-          <strong>${escapeHtml(item.name)}</strong>
-        </span>
-      </label>
-    `;
-
-    shoppingList.appendChild(listItem);
-  });
-}
   onSnapshot(
     plansQuery,
     (snapshot) => {
