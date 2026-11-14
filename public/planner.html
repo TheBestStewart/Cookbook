@@ -3,27 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Meal Planner</title>
     <link rel="stylesheet" href="styles/styles.css">
     <link rel="stylesheet" href="styles/plannerstyle.css">
 </head>
 <body>
     <header>
     <nav class="site-nav" aria-label="Main navigation">
-    <span class="site-brand">Cookbook</span>
+    <span class="site-brand">Simplify</span>
     <a href="cookbook.html" class="nav-link">Cookbook</a>
     <a href="planner.html" class="nav-link" aria-current="page">Planner</a>
-    <a href="shopping-list.html" class="nav-link">Shopping List</a>
+    <a href="shopping-list.html" class="nav-link">Shop</a>
     </nav>
     </header>
     <main>
-      <div id="month">
-        <h1>Month</h1>
-        <button type="button" id="previous"><p>&#10151</p></button>
-        <button type="button" id="next"><p>&#10151</p></button>
+      <div class="planner-toolbar">
+        <button id="recipe-search-toggle" type="button" aria-expanded="false" aria-controls="recipe-search-drawer">Recipe search</button>
+        <div id="month" aria-label="Calendar controls">
+          <h1>Meal Planner</h1>
+          <div class="calendar-controls">
+            <button type="button" id="previous" aria-label="Previous month">‹</button>
+            <button type="button" id="today">Today</button>
+            <button type="button" id="next" aria-label="Next month">›</button>
+          </div>
+        </div>
+        <button id="grocery-toggle" type="button" aria-expanded="false" aria-controls="grocery-drawer">Grocery list</button>
       </div>
-      <div id="calendar"></div>
-      <form id="form">
+
+      <div class="planner-content recipe-search-collapsed grocery-collapsed">
+        <aside id="recipe-search-drawer" class="planner-drawer recipe-search-drawer" aria-label="Recipe search">
+          <h2>Recipe search</h2>
+          <label for="planner-recipe-search">Search recipes</label>
+          <input id="planner-recipe-search" type="search" placeholder="Search recipes...">
+        </aside>
+
+        <section class="planner-main" aria-label="Meal calendar">
+          <div id="calendar"></div>
+          <form id="form">
         <input id="recipe-name" type="text" placeholder="Recipe Name" required>
         <input id="prep-time" type="text" placeholder="Prep Time">
         <input id="cook-time" type="text" placeholder="Cook Time">
@@ -36,15 +52,54 @@
         <input id="instructions" type="text" placeholder="Instructions" required>
         <input id="notes" type="text" placeholder="Notes">
         <button type="submit">Create</button>
-      </form>
+          </form>
+        </section>
+
+        <aside id="grocery-drawer" class="planner-drawer grocery-drawer" aria-label="Grocery list">
+          <h2>Grocery list</h2>
+          <p>Ingredients to pick up for your planned meals.</p>
+          <ul class="grocery-list">
+            <li>Chicken breasts</li>
+            <li>Marinara sauce</li>
+            <li>Mozzarella</li>
+          </ul>
+          <a class="planner-drawer-action" href="shopping-list.html">Open full grocery list</a>
+        </aside>
+      </div>
     </main>
 <script>
     const calendar = document.getElementById("calendar");
     const monthTitle = document.querySelector("h1");
     const previousButton = document.getElementById("previous");
+    const todayButton = document.getElementById("today");
     const nextButton = document.getElementById("next");
+    const plannerContent = document.querySelector(".planner-content");
+    const recipeSearchToggle = document.getElementById("recipe-search-toggle");
+    const groceryToggle = document.getElementById("grocery-toggle");
 
     let displayedDate = new Date();
+
+    recipeSearchToggle.addEventListener("click", () => {
+      const isCollapsed = plannerContent.classList.toggle("recipe-search-collapsed");
+      if (!isCollapsed) {
+        plannerContent.classList.add("grocery-collapsed");
+        groceryToggle.setAttribute("aria-expanded", "false");
+        groceryToggle.textContent = "Grocery list";
+      }
+      recipeSearchToggle.setAttribute("aria-expanded", String(!isCollapsed));
+      recipeSearchToggle.textContent = isCollapsed ? "Recipe search" : "Hide";
+    });
+
+    groceryToggle.addEventListener("click", () => {
+      const isCollapsed = plannerContent.classList.toggle("grocery-collapsed");
+      if (!isCollapsed) {
+        plannerContent.classList.add("recipe-search-collapsed");
+        recipeSearchToggle.setAttribute("aria-expanded", "false");
+        recipeSearchToggle.textContent = "Recipe search";
+      }
+      groceryToggle.setAttribute("aria-expanded", String(!isCollapsed));
+      groceryToggle.textContent = isCollapsed ? "Grocery list" : "Hide";
+    });
 
     function renderCalendar() {
       const year = displayedDate.getFullYear();
@@ -62,29 +117,44 @@
 
       calendar.replaceChildren();
 
+      const weekdayRow = document.createElement("div");
+      weekdayRow.className = "weekday-row";
+      ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].forEach((weekday) => {
+        const weekdayLabel = document.createElement("div");
+        weekdayLabel.textContent = weekday;
+        weekdayLabel.setAttribute("aria-hidden", "true");
+        weekdayRow.appendChild(weekdayLabel);
+      });
+      calendar.appendChild(weekdayRow);
+
+      const firstCalendarDate = new Date(year, month, 1 - firstDayOfMonth);
+      const calendarCellCount = Math.ceil((firstDayOfMonth + daysInMonth) / 7) * 7;
       let week = document.createElement("div");
       week.className = "week";
 
-      // Add empty days before the first day of the month
-      for (let i = 0; i < firstDayOfMonth; i++) {
-        const emptyDay = document.createElement("div");
-        emptyDay.className = "empty";
-        week.appendChild(emptyDay);
-      }
+      for (let cellIndex = 0; cellIndex < calendarCellCount; cellIndex++) {
+        const cellDate = new Date(firstCalendarDate);
+        cellDate.setDate(firstCalendarDate.getDate() + cellIndex);
 
-      for (let dayNumber = 1; dayNumber <= daysInMonth; dayNumber++) {
-        const day = document.createElement("div");
+        const day = document.createElement("button");
+        day.type = "button";
         day.className = "day";
 
-        day.dataset.date = `${year}-${String(month + 1).padStart(2, "0")}-${String(dayNumber).padStart(2, "0")}`;
+        const dateValue = `${cellDate.getFullYear()}-${String(cellDate.getMonth() + 1).padStart(2, "0")}-${String(cellDate.getDate()).padStart(2, "0")}`;
+        day.dataset.date = dateValue;
+        day.setAttribute("aria-label", day.dataset.date);
+
+        if (cellDate.getMonth() !== month) {
+          day.classList.add("adjacent-month");
+        }
 
         const paragraph = document.createElement("p");
-        paragraph.textContent = dayNumber;
+        paragraph.textContent = cellDate.getDate();
 
         const isToday =
-          dayNumber === today.getDate() &&
-          month === today.getMonth() &&
-          year === today.getFullYear();
+          cellDate.getDate() === today.getDate() &&
+          cellDate.getMonth() === today.getMonth() &&
+          cellDate.getFullYear() === today.getFullYear();
 
         if (isToday) {
           day.classList.add("today");
@@ -101,22 +171,26 @@
         }
       }
 
-      // Add remaining days to the final week
-      if (week.children.length > 0) {
-        while (week.children.length < 7) {
-          const emptyDay = document.createElement("div");
-          emptyDay.className = "empty";
-          week.appendChild(emptyDay);
-        }
-
-        calendar.appendChild(week);
-      }
       window.dispatchEvent(new CustomEvent("calendar-rendered"));
+    }
+
+    function updateTodayHighlight() {
+      const today = new Date();
+      const todayDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+
+      document.querySelectorAll(".day").forEach((day) => {
+        day.classList.toggle("today", day.dataset.date === todayDate);
+      });
     }
 
     previousButton.addEventListener("click", () => {
       displayedDate.setDate(1);
       displayedDate.setMonth(displayedDate.getMonth() - 1);
+      renderCalendar();
+    });
+
+    todayButton.addEventListener("click", () => {
+      displayedDate = new Date();
       renderCalendar();
     });
 
@@ -128,8 +202,8 @@
 
     renderCalendar();
 
-    // Refresh the current-day styling automatically
-    setInterval(renderCalendar, 60 * 1000);
+    // Refresh only the current-day styling so planned items remain in place.
+    setInterval(updateTodayHighlight, 60 * 1000);
 </script>
 <script type="module" src="scripts/script.js"></script>
 </body>

@@ -1,23 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap');
+
 * {
   box-sizing: border-box;
 }
 
 :root {
-  --color-background: #f8f7f3;
-  --color-surface: #ffffff;
-  --color-text: #252525;
-  --color-muted: #6f6f6f;
-  --color-accent: #c96f42;
-  --color-border: #dedbd4;
+  --color-background: #f5f1e6;
+  --color-surface: #fffdf6;
+  --color-text: #21352b;
+  --color-muted: #66756c;
+  --color-accent: #3f6b50;
+  --color-accent-dark: #28513a;
+  --color-border: #d8d6c8;
+  --color-surface-hover: #eef4ec;
+  --color-nav-hover: #e5eee5;
+  --color-surface-muted: #eeeee7;
+  --color-today: #e8f1e8;
+  --color-calendar-item: #dce9d8;
+  --color-calendar-item-text: #234632;
+  --color-image-overlay: rgba(255, 253, 246, 0.65);
+  --color-overlay-backdrop: rgba(26, 43, 34, 0.38);
+  --color-focus: rgba(63, 107, 80, 0.35);
   --radius-sm: 0.5rem;
   --radius-md: 0.85rem;
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
   --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.12);
+  --shadow-sticky: 0 -4px 10px rgba(0, 0, 0, 0.08);
 }
 
 body {
   margin: 0;
-  font-family: sans-serif;
+  font-family: 'DM Sans', sans-serif;
   color: var(--color-text);
   background: var(--color-background);
 }
@@ -30,7 +43,7 @@ body {
   align-items: center;
   flex-wrap: wrap;
   gap: 0.5rem;
-  padding: 0.85rem 1rem;
+  padding: 0.85rem max(1rem, calc((100vw - 1100px) / 2));
   color: var(--color-text);
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
@@ -39,9 +52,19 @@ body {
 .site-brand {
   margin-right: auto;
   color: var(--color-text);
-  font-size: 1.15rem;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 1.7rem;
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: 'Fraunces', Georgia, serif;
 }
 
 .site-nav a {
@@ -56,7 +79,7 @@ body {
 .site-nav a:hover,
 .site-nav a:focus-visible {
   color: var(--color-accent);
-  background: #f3eee8;
+  background: var(--color-nav-hover);
   border-color: var(--color-border);
 }
 
@@ -87,11 +110,12 @@ button,
 input,
 textarea {
   color: inherit;
+  font: inherit;
 }
 
 button:focus-visible,
 input:focus-visible,
 textarea:focus-visible {
-  outline: 3px solid rgba(201, 111, 66, 0.35);
+  outline: 3px solid var(--color-focus);
   outline-offset: 2px;
 }

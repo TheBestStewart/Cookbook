@@ -1,79 +1,323 @@
 main {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-height: 0;
+    padding: 1rem;
+}
+.planner-toolbar {
     display: grid;
-    justify-items: center;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 1rem;
+    width: min(100%, 1100px);
+    margin: 0 auto;
+}
+.planner-toolbar > button {
+    flex: 0 0 auto;
+    margin: 0;
+    min-height: 2.25rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+    cursor: pointer;
+}
+.planner-toolbar > button:hover {
+    border-color: var(--color-accent);
+    background: var(--color-surface-hover);
+}
+#recipe-search-toggle {
+    justify-self: start;
+}
+#grocery-toggle {
+    justify-self: end;
+}
+.planner-content {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: stretch;
+    gap: 1rem;
+    min-height: 0;
+    width: min(100%, 1100px);
+    margin: 0 auto;
+    overflow: hidden;
+}
+.planner-main {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-y: auto;
+}
+.planner-drawer {
+    flex: 0 0 0;
+    width: 260px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    transition: flex-basis 300ms ease, transform 300ms ease;
+}
+.recipe-search-drawer {
+    transform: translateX(-260px);
+}
+.grocery-drawer {
+    transform: translateX(260px);
+}
+.planner-content:not(.recipe-search-collapsed) .recipe-search-drawer,
+.planner-content:not(.grocery-collapsed) .grocery-drawer {
+    flex-basis: 260px;
+    transform: translateX(0);
+}
+.planner-drawer h2 {
+    margin-top: 0;
+    color: var(--color-accent);
+}
+.planner-drawer p {
+    color: var(--color-muted);
+    line-height: 1.5;
+}
+.recipe-search-drawer label,
+.recipe-search-drawer input {
+    display: block;
+    width: 100%;
+}
+.recipe-search-drawer label {
+    margin-bottom: 0.35rem;
+    font-weight: 600;
+}
+.recipe-search-drawer input {
+    padding: 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font: inherit;
+    background: var(--color-background);
+}
+.grocery-list {
+    display: grid;
+    gap: 0.5rem;
+    padding-left: 1.25rem;
+}
+.planner-drawer-action {
+    position: sticky;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: auto;
+    padding: 0.65rem 0.8rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    color: inherit;
+    background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+    text-decoration: none;
+    transition: background 150ms ease, border-color 150ms ease, transform 150ms ease;
+}
+.planner-drawer-action:hover,
+.planner-drawer-action:focus-visible {
+    border-color: var(--color-accent);
+    background: var(--color-surface-hover);
+    transform: translateY(-1px);
 }
 #month {
     display: grid;
-    gap: 1em;
-    grid-template-columns: 1fr 35px 35px;
+    gap: 1rem;
+    grid-template-columns: 1fr auto;
     align-items:center;
     width: 100%;
 }
-#previous {
-    width: 35px;
-    height: 35px;
-    display: grid;
-    justify-content: center;
-    align-content: center;
+.calendar-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
-#previous > p {
-    rotate: 270deg;
+.calendar-controls button {
+    margin: 0;
+    min-height: 2.25rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    color: inherit;
+    background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+    cursor: pointer;
+    transition: background 150ms ease, border-color 150ms ease, transform 150ms ease;
 }
+.calendar-controls button:hover {
+    border-color: var(--color-accent);
+    background: var(--color-surface-hover);
+    transform: translateY(-1px);
+}
+#month > h1 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+#previous,
 #next {
-    width: 35px;
-    height: 35px;
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    font-size: 1.5rem;
+    line-height: 1;
 }
-#next > p {
-    rotate: 90deg;
-}
-#month > h1{
-    font-size: 1.5em;
+#today {
+    min-height: 2.25rem;
 }
 #calendar {
     justify-self: center;
     width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
 }
+.weekday-row,
 .week {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: 0.25em;
-    margin: 0.25em;
+    gap: 0.5rem;
 }
-.day, .empty {
+.weekday-row {
+    margin-bottom: 0.5rem;
+    color: var(--color-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-align: center;
+}
+.week {
+    margin-bottom: 0.5rem;
+}
+.day {
     height: auto;
     width: auto;
     aspect-ratio: 1/1;
     box-sizing: border-box;
-    border: 2px solid black;
-    border-radius: 15%;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+}
+.day {
+    padding: 0.4rem;
+    color: var(--color-text);
+    text-align: left;
+    background: var(--color-background);
+    cursor: pointer;
+}
+.day:hover {
+    border-color: var(--color-accent);
+    background: var(--color-surface-hover);
+}
+.day.adjacent-month {
+    color: var(--color-muted);
+    background: var(--color-surface-muted);
+}
+.day.adjacent-month:hover {
+    color: var(--color-text);
+    background: var(--color-surface-hover);
+}
+.day.today {
+    border: 2px solid var(--color-accent);
+    background: var(--color-today);
 }
 .day > p {
-    font-size: 50%;
-    margin: 0.5em;
+    margin: 0;
+    font-size: 0.8rem;
+    font-weight: 700;
 }
 .calendar-item {
   margin-top: 6px;
   padding: 5px;
   border-radius: 4px;
-  background-color: #f3d6a2;
-  color: #3b2a1a;
+  background-color: var(--color-calendar-item);
+  color: var(--color-calendar-item-text);
   font-size: 0.8rem;
   overflow-wrap: anywhere;
 }
 @media (min-width: 500px) {
     .day > p {
-        font-size: 75%;
-        margin: 0.25em;
+        font-size: 0.9rem;
     }
 }
 @media (min-width: 700px) {
-    .day, .empty {
+    .day {
         height: 93px;
         width: auto;
         aspect-ratio: unset;
-        border-radius: 15px;
+        border-radius: var(--radius-sm);
     }
-    .day > p {
-        margin: 0.4em;
+    #calendar {
+        max-width: none;
+    }
+}
+
+@media (max-width: 700px) {
+    .planner-toolbar {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    #month {
+        grid-column: 1 / -1;
+        grid-row: 1;
+    }
+
+    .planner-toolbar > button:first-child {
+        grid-column: 1;
+        grid-row: 2;
+    }
+
+    .planner-toolbar > button:last-child {
+        grid-column: 2;
+        grid-row: 2;
+    }
+
+    .planner-content:not(.recipe-search-collapsed) .recipe-search-drawer,
+    .planner-content:not(.grocery-collapsed) .grocery-drawer {
+        flex-basis: auto;
+        pointer-events: auto;
+    }
+
+    .planner-content {
+        position: relative;
+    }
+
+    .planner-drawer {
+        position: absolute;
+        inset: 0;
+        z-index: 4;
+        width: 100%;
+        height: 100%;
+        flex: 0 0 auto;
+        pointer-events: none;
+        overflow-y: auto;
+        transition: transform 300ms ease;
+    }
+
+    .recipe-search-drawer,
+    .planner-content.recipe-search-collapsed .recipe-search-drawer {
+        transform: translateX(-100%);
+    }
+
+    .grocery-drawer,
+    .planner-content.grocery-collapsed .grocery-drawer {
+        transform: translateX(100%);
+    }
+
+    .planner-content:not(.recipe-search-collapsed) .recipe-search-drawer,
+    .planner-content:not(.grocery-collapsed) .grocery-drawer {
+        transform: translateX(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .planner-drawer {
+        transition: none;
     }
 }

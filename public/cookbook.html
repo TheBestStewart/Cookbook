@@ -12,21 +12,28 @@
 <body>
     <header>
         <nav class="site-nav" aria-label="Main navigation">
-            <span class="site-brand">Cookbook</span>
+            <span class="site-brand">Simplify</span>
             <a href="cookbook.html" aria-current="page">Cookbook</a>
             <a href="planner.html">Planner</a>
-            <a href="shopping-list.html">Shopping List</a>
+            <a href="shopping-list.html">Shop</a>
         </nav>
     </header>
 
     <main class="cookbook-page">
         <section class="search-section" aria-label="Recipe search">
             <button id="filters-toggle" type="button" aria-expanded="false" aria-controls="recipe-filters">
+                <svg class="button-icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                    <path d="M4 5h16l-6.5 7.2V18l-3 1v-6.8L4 5Z"></path>
+                </svg>
                 <span class="toggle-label">Filters</span>
             </button>
             <input id="recipe-search" type="search" placeholder="Search recipes...">
             <button id="add-recipe-toggle" type="button" aria-expanded="false" aria-controls="add-recipe-panel">
-                <span aria-hidden="true">+</span> <span class="add-recipe-label">Add recipe</span>
+                <svg class="button-icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                    <path d="M6 3h8l4 4v14H6V3Z"></path>
+                    <path d="M14 3v4h4M9 17l6.5-6.5 2 2L11 19H9v-2Z"></path>
+                </svg>
+                <span class="add-recipe-label">Add Recipe</span>
             </button>
         </section>
 
@@ -36,21 +43,33 @@
                     <aside id="recipe-filters" class="filters" aria-label="Recipe filters">
                 <h2>Filters</h2>
                 <div class="filter-group">
-                    <h3>Meal type</h3>
-                    <label><input type="checkbox"> Breakfast</label>
-                    <label><input type="checkbox"> Lunch</label>
-                    <label><input type="checkbox"> Dinner</label>
+                    <h3>Main protein</h3>
+                    <label><input type="checkbox"> Chicken</label>
+                    <label><input type="checkbox"> Beef</label>
+                    <label><input type="checkbox"> Pork</label>
                 </div>
                 <div class="filter-group">
-                    <h3>Diet</h3>
-                    <label><input type="checkbox"> Vegetarian</label>
-                    <label><input type="checkbox"> Vegan</label>
+                    <h3>Main carb</h3>
+                    <label><input type="checkbox"> Pasta</label>
+                    <label><input type="checkbox"> Rice</label>
+                    <label><input type="checkbox"> Bread</label>
+                    <label><input type="checkbox"> Potatoes</label>
+                </div>
+                <div class="filter-group">
+                    <h3>Cuisine</h3>
+                    <label><input type="checkbox"> American</label>
+                    <label><input type="checkbox"> Italian</label>
+                    <label><input type="checkbox"> Mexican</label>
+                    <label><input type="checkbox"> Asian</label>
                 </div>
                 <div class="filter-group">
                     <h3>Cook time</h3>
                     <label><input type="checkbox"> Under 30 minutes</label>
                     <label><input type="checkbox"> 30–60 minutes</label>
+                    <label><input type="checkbox"> 1–4 hours</label>
+                    <label><input type="checkbox"> 4+ hours</label>
                 </div>
+                <button id="apply-filters" type="button">Apply Filters</button>
                     </aside>
 
                 </div>
@@ -106,7 +125,7 @@
                             <label for="new-recipe-notes">Notes</label>
                             <textarea id="new-recipe-notes" name="notes" rows="3"></textarea>
 
-                            <button type="button" disabled>Create recipe</button>
+                            <button type="button" disabled>Add Recipe</button>
                         </form>
                     </aside>
                 </div>
@@ -116,10 +135,8 @@
 
     <div id="recipe-overlay" class="recipe-overlay" hidden aria-hidden="true">
         <div class="recipe-dialog">
-            <div class="recipe-overlay-bar">
-                <button id="plan-recipe" type="button">Plan recipe</button>
-                <button class="recipe-close" type="button" data-close-overlay aria-label="Close recipe">×</button>
-            </div>
+            <button class="recipe-close" type="button" data-close-overlay aria-label="Close recipe">×</button>
+            <button id="cooking-mode" class="cooking-mode-toggle" type="button">Cooking Mode</button>
             <article class="recipe-window" role="dialog" aria-modal="true" aria-labelledby="recipe-title">
                 <section class="recipe-picture" aria-label="Recipe picture">
                     <img id="recipe-image" alt="">
@@ -142,6 +159,7 @@
                     <div id="recipe-instructions-list"></div>
                     <div id="recipe-notes"></div>
                 </section>
+                <button id="plan-recipe" class="recipe-overlay-plan" type="button">Plan recipe</button>
             </article>
         </div>
     </div>
@@ -243,6 +261,9 @@
     const mealPlannerTitle = document.querySelector('#meal-planner-title');
     const mealPlanDate = document.querySelector('#meal-plan-date');
     const mealPlannerCancel = document.querySelector('#meal-planner-cancel');
+    const planRecipeButton = document.querySelector('#plan-recipe');
+    const cookingModeButton = document.querySelector('#cooking-mode');
+    let activeRecipe = null;
 
     const closeMealPlanner = () => {
       mealPlannerPopover.hidden = true;
@@ -271,6 +292,7 @@
       card.className = 'recipe-card';
       card.innerHTML = '<button class="recipe-open" type="button"><img class="recipe-image" src="' + recipe.image + '" alt="' + recipe.title + '"><span class="recipe-card-text"><h3>' + recipe.title + '</h3><p>' + recipe.cookTime + '</p></span></button><button class="recipe-plan" type="button" aria-label="Plan recipe">+</button>';
       card.querySelector('.recipe-open').addEventListener('click', () => {
+        activeRecipe = recipe;
         recipeTitle.textContent = recipe.title;
         recipeTags.textContent = 'Tags: ' + recipe.tags.join(', ');
         recipeImage.src = recipe.image;
@@ -310,7 +332,7 @@
       if (!collapsed) {
         cookbookContent.classList.add('add-recipe-collapsed');
         addRecipeToggle.setAttribute('aria-expanded', 'false');
-        addRecipeLabel.textContent = 'Add recipe';
+        addRecipeLabel.textContent = 'Add Recipe';
       }
 
       filtersToggle.setAttribute('aria-expanded', String(!collapsed));
@@ -327,17 +349,45 @@
       }
 
       addRecipeToggle.setAttribute('aria-expanded', String(!collapsed));
-      addRecipeLabel.textContent = collapsed ? 'Add recipe' : 'Hide';
+      addRecipeLabel.textContent = collapsed ? 'Add Recipe' : 'Hide';
     });
 
     const closeOverlay = () => {
       overlay.hidden = true;
       overlay.setAttribute('aria-hidden', 'true');
+      overlay.classList.remove('cooking-mode');
+      cookingModeButton.hidden = false;
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
     };
     document.querySelector('[data-close-overlay]').addEventListener('click', closeOverlay);
+    cookingModeButton.addEventListener('click', async () => {
+      overlay.classList.add('cooking-mode');
+      cookingModeButton.hidden = true;
+
+      if (overlay.requestFullscreen) {
+        try {
+          await overlay.requestFullscreen();
+        } catch (error) {
+          // The expanded overlay remains available if fullscreen is denied.
+        }
+      }
+    });
+    document.addEventListener('fullscreenchange', () => {
+      if (!document.fullscreenElement && overlay.classList.contains('cooking-mode')) {
+        overlay.classList.remove('cooking-mode');
+        cookingModeButton.hidden = false;
+      }
+    });
+    planRecipeButton.addEventListener('click', (event) => {
+      if (activeRecipe) {
+        openMealPlanner(activeRecipe, event.currentTarget);
+      }
+    });
     mealPlannerCancel.addEventListener('click', closeMealPlanner);
     document.addEventListener('click', (event) => {
-      if (!mealPlannerPopover.hidden && !event.target.closest('#meal-planner-popover, .recipe-plan')) {
+      if (!mealPlannerPopover.hidden && !event.target.closest('#meal-planner-popover, .recipe-plan, #plan-recipe')) {
         closeMealPlanner();
       }
     });
