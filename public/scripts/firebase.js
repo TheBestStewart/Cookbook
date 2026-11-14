@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/13.3.0/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/13.3.0/firebase-auth.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/13.3.0/firebase-firestore.js";
 const firebaseConfig = {
   apiKey: "AIzaSyAnPbE62ha1zIxXFMai-Si3-HwT0E7eFqo",
   authDomain: "cookbook-ab3e6.firebaseapp.com",
@@ -11,4 +12,6 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 export {auth};
+export {db};

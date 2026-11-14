@@ -1,0 +1,79 @@
+main {
+    display: grid;
+    justify-items: center;
+}
+#month {
+    display: grid;
+    gap: 1em;
+    grid-template-columns: 1fr 35px 35px;
+    align-items:center;
+    width: 100%;
+}
+#previous {
+    width: 35px;
+    height: 35px;
+    display: grid;
+    justify-content: center;
+    align-content: center;
+}
+#previous > p {
+    rotate: 270deg;
+}
+#next {
+    width: 35px;
+    height: 35px;
+}
+#next > p {
+    rotate: 90deg;
+}
+#month > h1{
+    font-size: 1.5em;
+}
+#calendar {
+    justify-self: center;
+    width: 100%;
+}
+.week {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 0.25em;
+    margin: 0.25em;
+}
+.day, .empty {
+    height: auto;
+    width: auto;
+    aspect-ratio: 1/1;
+    box-sizing: border-box;
+    border: 2px solid black;
+    border-radius: 15%;
+}
+.day > p {
+    font-size: 50%;
+    margin: 0.5em;
+}
+.calendar-item {
+  margin-top: 6px;
+  padding: 5px;
+  border-radius: 4px;
+  background-color: #f3d6a2;
+  color: #3b2a1a;
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+@media (min-width: 500px) {
+    .day > p {
+        font-size: 75%;
+        margin: 0.25em;
+    }
+}
+@media (min-width: 700px) {
+    .day, .empty {
+        height: 93px;
+        width: auto;
+        aspect-ratio: unset;
+        border-radius: 15px;
+    }
+    .day > p {
+        margin: 0.4em;
+    }
+}
