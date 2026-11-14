@@ -128,7 +128,7 @@ main {
 #month {
     display: grid;
     gap: 1rem;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items:center;
     width: 100%;
 }
@@ -136,6 +136,8 @@ main {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
 .calendar-controls button {
     margin: 0;
@@ -174,17 +176,21 @@ main {
 #calendar {
     justify-self: center;
     width: 100%;
-    padding: 0.75rem;
+    min-width: 0;
+    padding: clamp(0.35rem, 2vw, 0.75rem);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     background: var(--color-surface);
     box-shadow: var(--shadow-sm);
 }
+.mobile-agenda {
+    display: none;
+}
 .weekday-row,
 .week {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: 0.5rem;
+    gap: clamp(0.2rem, 1.5vw, 0.5rem);
 }
 .weekday-row {
     margin-bottom: 0.5rem;
@@ -197,15 +203,16 @@ main {
     margin-bottom: 0.5rem;
 }
 .day {
+    min-width: 0;
     height: auto;
-    width: auto;
+    width: 100%;
     aspect-ratio: 1/1;
     box-sizing: border-box;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
 }
 .day {
-    padding: 0.4rem;
+    padding: clamp(0.2rem, 1vw, 0.4rem);
     color: var(--color-text);
     text-align: left;
     background: var(--color-background);
@@ -229,17 +236,20 @@ main {
 }
 .day > p {
     margin: 0;
-    font-size: 0.8rem;
+    font-size: clamp(0.65rem, 2.5vw, 0.9rem);
     font-weight: 700;
 }
 .calendar-item {
   margin-top: 6px;
   padding: 5px;
+  max-width: 100%;
   border-radius: 4px;
   background-color: var(--color-calendar-item);
   color: var(--color-calendar-item-text);
-  font-size: 0.8rem;
-  overflow-wrap: anywhere;
+  font-size: clamp(0.55rem, 1.8vw, 0.8rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 @media (min-width: 500px) {
     .day > p {
@@ -313,6 +323,68 @@ main {
     .planner-content:not(.recipe-search-collapsed) .recipe-search-drawer,
     .planner-content:not(.grocery-collapsed) .grocery-drawer {
         transform: translateX(0);
+    }
+}
+
+@media (max-width: 699px) {
+    #calendar {
+        display: none;
+    }
+
+    .mobile-agenda {
+        display: grid;
+        gap: 0.75rem;
+    }
+
+    .agenda-entry {
+        padding: 0.85rem 1rem;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        background: var(--color-surface);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .agenda-entry h2 {
+        margin: 0 0 0.45rem;
+        color: var(--color-accent);
+        font-size: 1rem;
+    }
+
+    .agenda-meal,
+    .agenda-empty {
+        margin: 0;
+        line-height: 1.4;
+    }
+
+    .agenda-meal {
+        padding: 0.55rem 0.7rem;
+        border-radius: var(--radius-sm);
+        color: var(--color-calendar-item-text);
+        background: var(--color-calendar-item);
+        font-weight: 600;
+    }
+
+    .agenda-empty {
+        color: var(--color-muted);
+    }
+
+    .day {
+        height: auto;
+        aspect-ratio: 1 / 1;
+    }
+}
+
+@media (max-width: 420px) {
+    #month {
+        grid-template-columns: 1fr;
+    }
+
+    .calendar-controls {
+        justify-content: flex-start;
+    }
+
+    #month > h1 {
+        font-size: 1.25rem;
     }
 }
 
