@@ -12,7 +12,7 @@ const provider = new GoogleAuthProvider();
 function loggedIn() {
     onAuthStateChanged(auth, (user) => {
         if (user) {
-            window.location.replace("home.html");
+            window.location.replace("cookbook.html");
         } else {
             window.location.replace("welcome.html");
         }
@@ -29,7 +29,7 @@ if (loginButton) {
 
             console.log("Logged in:", result.user.displayName);
 
-            window.location.replace("home.html");
+            window.location.replace("cookbook.html");
         } catch (error) {
             console.error("Login failed:", error.code, error.message);
         }
