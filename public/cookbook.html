@@ -12,7 +12,7 @@
 <body>
     <header>
         <nav class="site-nav" aria-label="Main navigation">
-            <span class="site-brand">Cookbook</span>
+            <span class="site-brand">Simplify</span>
             <a href="cookbook.html" aria-current="page">Cookbook</a>
             <a href="planner.html">Planner</a>
             <button id="logout" type="button">Logout</button>
@@ -73,10 +73,6 @@
                 <div class="add-recipe-drawer">
                     <aside id="add-recipe-panel" class="add-recipe-panel" aria-label="Add a new recipe">
                         <h2>Add recipe</h2>
-                        <section class="recipe-url-import" aria-labelledby="recipe-url-heading">
-                            <h3 id="recipe-url-heading">Import from URL</h3>
-                            <input id="new-recipe-url" name="recipeUrl" type="url" placeholder="https://example.com/recipe">
-                        </section>
                         <form id="form">
                             <label for="recipe-name">Recipe name</label>
                             <input id="recipe-name" name="title" type="text" required>
@@ -84,8 +80,6 @@
                             <label for="image">Image URL</label>
                             <input id="image" name="image" type="url">
 
-                            <label for="source">Recipe Source</label>
-                            <input id="source" type="url">
 
                             <label for="tags">Tags</label>
                             <input id="tags" name="tags" type="text" placeholder="Beef, Rice, Oven, Rich">
@@ -147,7 +141,6 @@
                     <p id="recipe-cook-time">Cook time: 30 minutes</p>
                     <p id="recipe-total-time">Total time: 60 minutes</p>
                     <p id="recipe-serving-size">Serves: 4</p>
-                    <p id="recipe-source">Source</p>
                 </section>
                 <section class="recipe-ingredients">
                     <h3>Ingredients</h3>
@@ -197,7 +190,6 @@
     const recipeCookTime = document.querySelector('#recipe-cook-time');
     const recipeTotalTime = document.querySelector('#recipe-total-time');
     const recipeServingSize = document.querySelector('#recipe-serving-size');
-    const recipeSource = document.querySelector('#recipe-source');
     const recipeIngredients = document.querySelector('#recipe-ingredients-list');
     const recipeInstructions = document.querySelector('#recipe-instructions-list');
     const recipeNotes = document.querySelector('#recipe-notes');
@@ -306,8 +298,6 @@ function openRecipeDetails(recipe) {
 
   recipeServingSize.textContent =
     "Serves: " + (recipe.servings || "");
-    recipeSource.textContent =
-    "Source: " + (recipe.source || "");
 
   const ingredients = linesToSections(
     recipe.ingredients,
