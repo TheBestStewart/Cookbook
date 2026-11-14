@@ -1,10 +1,14 @@
 import {
   collection,
   addDoc,
+  doc,
+  deleteDoc,
+  getDocs,
   onSnapshot,
-  orderBy,
+  or,
   query,
   where,
+  writeBatch,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/13.3.0/firebase-firestore.js";
 
@@ -17,7 +21,70 @@ import {
 } from "https://www.gstatic.com/firebasejs/13.3.0/firebase-auth.js";
 
 
+let editingRecipeId = null;
+const editButton = document.querySelector("#edit-recipe");
 
+editButton?.addEventListener("click", () => {
+  const recipe = window.selectedRecipe;
+  const user = auth.currentUser;
+
+  if (!recipe || !user) return;
+
+  if (recipe.ownerId === "all") {
+    alert("Shared recipes cannot be edited.");
+    return;
+  }
+
+  if (recipe.ownerId !== user.uid) {
+    alert("You can only edit recipes you created.");
+    return;
+  }
+
+  editingRecipeId = recipe.id;
+
+  document.querySelector("#recipe-name").value =
+    recipe.name || recipe.title || "";
+
+  document.querySelector("#image").value =
+    recipe.image || "";
+
+  document.querySelector("#tags").value =
+    Array.isArray(recipe.tags)
+      ? recipe.tags.join(", ")
+      : recipe.tags || "";
+
+  document.querySelector("#new-recipe-description").value =
+    recipe.description || "";
+
+  document.querySelector("#prep-time").value =
+    recipe.prepTime || "";
+
+  document.querySelector("#cook-time").value =
+    recipe.cookTime || "";
+
+  document.querySelector("#total-time").value =
+    recipe.totalTime || "";
+
+  document.querySelector("#servings").value =
+    recipe.servings || "";
+
+  document.querySelector("#ingredients").value =
+    recipe.ingredients || "";
+
+  document.querySelector("#instructions").value =
+    recipe.instructions || "";
+
+  document.querySelector("#notes").value =
+    recipe.notes || "";
+
+  document.querySelector("#recipe-overlay").hidden = true;
+
+  document.querySelector("#add-recipe-toggle")?.click();
+
+  document
+    .querySelector("#add-recipe-form")
+    .scrollIntoView({ behavior: "smooth" });
+});
 const provider = new GoogleAuthProvider();
 
 // Check login status
@@ -60,6 +127,25 @@ onAuthStateChanged(auth, (user) => {
         alert("Please sign in before creating a recipe.");
         return;
       }
+      try {
+  if (editingRecipeId) {
+    await updateDoc(
+      doc(db, "items", editingRecipeId),
+      recipe
+    );
+
+    alert("Recipe updated.");
+    editingRecipeId = null;
+  } else {
+    await addDoc(collection(db, "items"), recipe);
+    alert("Recipe created.");
+  }
+
+  form.reset();
+} catch (error) {
+  console.error("Error saving recipe:", error);
+  alert("Could not save recipe.");
+}
 
       const recipe = {
         name: document.querySelector("#recipe-name").value.trim(),
@@ -89,9 +175,22 @@ function renderCalendarItems() {
     );
 
     matchingItems.forEach((item) => {
-      const box = document.createElement("div");
+      const box = document.createElement("button");
+
+      box.type = "button";
       box.className = "calendar-item";
-      box.textContent = item.name;
+      box.textContent = item.name || item.title || "Recipe";
+
+      box.addEventListener("click", () => {
+        if (!item.recipeId) {
+          console.error("Calendar item is missing recipeId:", item);
+          return;
+        }
+
+        window.location.href =
+          `cookbook.html?recipeId=${encodeURIComponent(item.recipeId)}`;
+      });
+
       day.appendChild(box);
     });
   });
@@ -186,12 +285,108 @@ function escapeHtml(value) {
 
 let savedItems = [];
 
+function renderCalendarItems() {
+  document.querySelectorAll(".day").forEach((day) => {
+    day.querySelectorAll(".calendar-item").forEach((item) => {
+      item.remove();
+    });
+
+    const matchingItems = savedItems.filter(
+      (item) => String(item.date) === String(day.dataset.date)
+    );
+
+    matchingItems.forEach((item) => {
+      const box = document.createElement("button");
+
+      box.type = "button";
+      box.className = "calendar-item";
+      box.textContent = item.name || "Recipe";
+
+      box.addEventListener("click", () => {
+        if (!item.recipeId) {
+          console.error("Missing recipeId:", item);
+          return;
+        }
+
+        window.location.href =
+          `cookbook.html?recipeId=${encodeURIComponent(item.recipeId)}`;
+      });
+
+      day.appendChild(box);
+    });
+  });
+}
+const shoppingList = document.querySelector("#shopping-list");
+
+if (shoppingList) {
+  onAuthStateChanged(auth, (user) => {
+    if (!user) return;
+
+    const plansQuery = query(
+      collection(db, "mealPlans"),
+      where("ownerId", "==", user.uid)
+    );
+
+    onSnapshot(plansQuery, (snapshot) => {
+      const ingredients = [];
+
+snapshot.forEach((doc) => {
+  const mealPlan = doc.data();
+  const recipeName = mealPlan.name || "Unknown recipe";
+
+  String(mealPlan.ingredients || "")
+    .split("\n")
+    .map((ingredient) => ingredient.trim())
+    .filter(Boolean)
+    .forEach((ingredient) => {
+      ingredients.push({
+        text: ingredient,
+        recipeName
+      });
+    });
+});
+
+renderShoppingList(ingredients);
+    });
+  });
+}
+
+function renderShoppingList(ingredients) {
+  shoppingList.replaceChildren();
+
+  const uniqueIngredients = [
+    ...new Map(
+      ingredients.map((item) => [
+        `${item.recipeName}|${item.text}`,
+        item
+      ])
+    ).values()
+  ];
+
+  uniqueIngredients.forEach((item) => {
+    const listItem = document.createElement("li");
+
+    listItem.innerHTML = `
+      <label>
+        <input type="checkbox">
+        <span>
+          <strong>${escapeHtml(item.text)}</strong> from
+          <strong>${escapeHtml(item.recipeName)}</strong>
+        </span>
+      </label>
+    `;
+
+    shoppingList.appendChild(listItem);
+  });
+}
+
 onAuthStateChanged(auth, (user) => {
   if (!user) return;
 
   const itemsQuery = query(
     collection(db, "items"),
-    where("ownerId", "==", user.uid)
+    or(
+    where("ownerId", "==", user.uid), where("ownerId", "==", "all"))
   );
 
   const plansQuery = query(
@@ -233,7 +428,74 @@ onAuthStateChanged(auth, (user) => {
       console.error("Items listener failed:", error);
     }
   );
+const ingredientTotals = new Map();
 
+snapshot.forEach((doc) => {
+  const mealPlan = doc.data();
+
+  String(mealPlan.ingredients || "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .forEach((line) => {
+      const parsed = parseIngredient(line);
+
+      if (!parsed) return;
+
+      const key = `${parsed.name}|${parsed.unit}`;
+
+      if (!ingredientTotals.has(key)) {
+        ingredientTotals.set(key, {
+          name: parsed.name,
+          unit: parsed.unit,
+          quantity: 0
+        });
+      }
+
+      ingredientTotals.get(key).quantity += parsed.quantity;
+    });
+});
+
+renderShoppingList([...ingredientTotals.values()]);
+function parseIngredient(line) {
+  const match = line.match(
+    /^(\d+(?:\.\d+)?|\d+\s*\/\s*\d+)\s*([a-zA-Z]*)\s+(.+)$/
+  );
+
+  if (!match) {
+    return null;
+  }
+
+  const quantityText = match[1].replace(/\s/g, "");
+  const quantity = quantityText.includes("/")
+    ? quantityText.split("/").reduce((a, b) => Number(a) / Number(b))
+    : Number(quantityText);
+
+  return {
+    quantity,
+    unit: match[2] || "",
+    name: match[3].toLowerCase()
+  };
+}
+function renderShoppingList(ingredients) {
+  shoppingList.replaceChildren();
+
+  ingredients.forEach((item) => {
+    const listItem = document.createElement("li");
+
+    listItem.innerHTML = `
+      <label>
+        <input type="checkbox">
+        <span>
+          <strong>${item.quantity} ${item.unit}</strong>
+          <strong>${escapeHtml(item.name)}</strong>
+        </span>
+      </label>
+    `;
+
+    shoppingList.appendChild(listItem);
+  });
+}
   onSnapshot(
     plansQuery,
     (snapshot) => {
@@ -250,24 +512,6 @@ onAuthStateChanged(auth, (user) => {
   );
 });
 
-function renderCalendarItems() {
-  document.querySelectorAll(".day").forEach((day) => {
-    day.querySelectorAll(".calendar-item").forEach((item) => {
-      item.remove();
-    });
-
-    const matchingItems = savedItems.filter(
-      (item) => item.date === day.dataset.date
-    );
-
-    matchingItems.forEach((item) => {
-      const box = document.createElement("div");
-      box.className = "calendar-item";
-      box.textContent = item.name;
-      day.appendChild(box);
-    });
-  });
-}
 
 const confirmButton = document.querySelector("#confirm-button");
 
@@ -315,6 +559,59 @@ confirmButton?.addEventListener("click", async (event) => {
     document.querySelector("#meal-planner-popover").hidden = true;
   } catch (error) {
     console.error("Could not save meal plan:", error);
+  }
+});
+
+const deleteButton = document.querySelector("#delete-recipe");
+
+deleteButton?.addEventListener("click", async () => {
+  const recipe = window.selectedRecipe;
+  const user = auth.currentUser;
+
+  if (!recipe?.id || !user) {
+    alert("No recipe is selected or you are not signed in.");
+    return;
+  }
+
+  if (recipe.ownerId === "all") {
+    alert("Shared recipes cannot be deleted.");
+    return;
+  }
+
+  if (recipe.ownerId !== user.uid) {
+    alert("You can only delete recipes you created.");
+    return;
+  }
+
+  if (!confirm(`Delete "${recipe.title || recipe.name}"?`)) {
+    return;
+  }
+
+  try {
+    const plansQuery = query(
+      collection(db, "mealPlans"),
+      where("recipeId", "==", recipe.id),
+      where("ownerId", "==", user.uid)
+    );
+
+    const plansSnapshot = await getDocs(plansQuery);
+    const batch = writeBatch(db);
+
+    plansSnapshot.forEach((plan) => {
+      batch.delete(plan.ref);
+    });
+
+    batch.delete(doc(db, "items", recipe.id));
+
+    await batch.commit();
+
+    alert("Recipe and all calendar entries were deleted.");
+
+    document.querySelector("#recipe-overlay").hidden = true;
+    window.selectedRecipe = null;
+  } catch (error) {
+    console.error("Could not delete recipe and meal plans:", error);
+    alert("The recipe could not be deleted.");
   }
 });
 

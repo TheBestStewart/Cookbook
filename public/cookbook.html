@@ -120,7 +120,8 @@
     <div id="recipe-overlay" class="recipe-overlay" hidden aria-hidden="true">
         <div class="recipe-dialog">
             <div class="recipe-overlay-bar">
-                <button id="plan-recipe" type="button">Plan recipe</button>
+                <button id="edit-recipe" type="button">Edit Recipe</button>
+                <button id="delete-recipe" type="button">Delete Recipe</button>
                 <button class="recipe-close" type="button" data-close-overlay aria-label="Close recipe">×</button>
             </div>
             <article class="recipe-window" role="dialog" aria-modal="true" aria-labelledby="recipe-title">
@@ -218,51 +219,151 @@
         window.innerHeight - mealPlannerPopover.offsetHeight - 16
       ) + 'px';
     };
+function linesToSections(value, itemName) {
+  if (Array.isArray(value)) {
+    return value;
+  }
 
-    function renderRecipes() {
+  return [
+    {
+      group: itemName,
+      items: String(value || "")
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean)
+    }
+  ];
+}
+
+function openRecipeDetails(recipe) {
+  window.selectedRecipe = recipe;
+
+  recipeTitle.textContent = recipe.title;
+
+  recipeTags.textContent =
+    "Tags: " + (recipe.tags || []).join(", ");
+
+  recipeImage.src = recipe.image || "";
+  recipeImage.alt = recipe.title;
+  recipeImage.hidden = !recipe.image;
+
+  recipeDescription.textContent =
+    recipe.description || "";
+
+  recipePrepTime.textContent =
+    "Prep time: " + (recipe.prepTime || "");
+
+  recipeCookTime.textContent =
+    "Cook time: " + (recipe.cookTime || "");
+
+  recipeTotalTime.textContent =
+    "Total time: " + (recipe.totalTime || "");
+
+  recipeServingSize.textContent =
+    "Serves: " + (recipe.servings || "");
+
+  const ingredients = linesToSections(
+    recipe.ingredients,
+    "Ingredients"
+  );
+
+  recipeIngredients.innerHTML = ingredients
+    .map(
+      (section) =>
+        `<h4>${section.group}</h4>
+         <ul>
+           ${section.items
+             .map((item) => `<li>${item}</li>`)
+             .join("")}
+         </ul>`
+    )
+    .join("");
+
+  const instructions = linesToSections(
+    recipe.instructions,
+    "Instructions"
+  );
+
+  recipeInstructions.innerHTML = instructions
+    .map(
+      (section) =>
+        `<h4>${section.group}</h4>
+         <ol>
+           ${section.items
+             .map((item) => `<li>${item}</li>`)
+             .join("")}
+         </ol>`
+    )
+    .join("");
+
+  recipeNotes.textContent = recipe.notes || "";
+
+  overlay.hidden = false;
+  overlay.setAttribute("aria-hidden", "false");
+}
+function renderRecipes() {
   recipeGrid.replaceChildren();
 
   recipes.forEach((recipe) => {
-      const card = document.createElement('article');
-      card.className = 'recipe-card';
-      card.innerHTML = '<button class="recipe-open" type="button"><img class="recipe-image" src="' + recipe.image + '" alt="' + recipe.title + '"><span class="recipe-card-text"><h3>' + recipe.title + '</h3><p>' + recipe.cookTime + '</p></span></button><button class="recipe-plan" type="button" aria-label="Plan recipe">+</button>';
-      card.querySelector('.recipe-open').addEventListener('click', () => {
-        recipeTitle.textContent = recipe.title;
-        recipeTags.textContent = 'Tags: ' + recipe.tags.join(', ');
-        recipeImage.src = recipe.image;
-        recipeImage.alt = recipe.title;
-        recipeImage.hidden = !recipe.image;
-        recipeDescription.textContent = recipe.description;
-        recipePrepTime.textContent = 'Prep time: ' + recipe.prepTime;
-        recipeCookTime.textContent = 'Cook time: ' + recipe.cookTime;
-        recipeTotalTime.textContent = 'Total time: ' + recipe.totalTime;
-        recipeServingSize.textContent = 'Serves: ' + recipe.servings;
-        recipeIngredients.innerHTML = recipe.ingredients.map((section) =>
-          '<h4>' + section.group + '</h4><ul>' +
-          section.items.map((item) => '<li>' + item + '</li>').join('') +
-          '</ul>'
-        ).join('');
-        recipeInstructions.innerHTML = recipe.instructions.map((section) =>
-          '<h4>' + section.group + '</h4><ol>' +
-          section.steps.map((step) => '<li>' + step + '</li>').join('') +
-          '</ol>'
-        ).join('');
-        recipeNotes.innerHTML = recipe.notes.length
-          ? '<h4>Notes</h4><ul>' + recipe.notes.map((note) => '<li>' + note + '</li>').join('') + '</ul>'
-          : '';
-        overlay.hidden = false;
-        overlay.setAttribute('aria-hidden', 'false');
-      });
-      card.querySelector('.recipe-plan').addEventListener('click', (event) => {
-        event.stopPropagation();
-        openMealPlanner(recipe, event.currentTarget);
-      });
-      recipeGrid.appendChild(card);
+    const card = document.createElement("article");
+
+    card.className = "recipe-card";
+
+    card.innerHTML = `
+      <button class="recipe-open" type="button">
+        <img
+          class="recipe-image"
+          src="${recipe.image || ""}"
+          alt="${recipe.title || ""}"
+        >
+
+        <span class="recipe-card-text">
+          <h3>${recipe.title || "Untitled recipe"}</h3>
+          <p>${recipe.totalTime || ""}</p>
+        </span>
+      </button>
+
+      <button
+        class="recipe-plan"
+        type="button"
+        aria-label="Plan recipe"
+      >
+        +
+      </button>
+    `;
+
+    card.addEventListener("click", (event) => {
+      if (event.target.closest(".recipe-plan")) {
+        return;
+      }
+
+      openRecipeDetails(recipe);
     });
+
+    card.querySelector(".recipe-plan").addEventListener("click", (event) => {
+      event.stopPropagation();
+      openMealPlanner(recipe, event.currentTarget);
+    });
+
+    recipeGrid.appendChild(card);
+  });
 }
 window.addEventListener("firebase-recipes-loaded", (event) => {
   recipes = event.detail;
   renderRecipes();
+
+  const recipeId = new URLSearchParams(window.location.search)
+    .get("recipeId");
+
+  if (!recipeId) return;
+
+  const recipe = recipes.find((item) => item.id === recipeId);
+
+  if (recipe) {
+    openRecipeDetails(recipe);
+  } else {
+    console.error("Recipe not found:", recipeId);
+  }
 });
 
     filtersToggle.addEventListener('click', () => {
