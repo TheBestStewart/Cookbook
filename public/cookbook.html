@@ -37,19 +37,19 @@
                 <h2>Filters</h2>
                 <div class="filter-group">
                     <h3>Meal type</h3>
-                    <label><input type="checkbox"> Breakfast</label>
-                    <label><input type="checkbox"> Lunch</label>
-                    <label><input type="checkbox"> Dinner</label>
+                    <label><input class="tag-filter" type="checkbox" value="breakfast"> Breakfast</label>
+                    <label><input class="tag-filter" type="checkbox" value="lunch"> Lunch</label>
+                    <label><input class="tag-filter" type="checkbox" value="dinner"> Dinner</label>
                 </div>
                 <div class="filter-group">
                     <h3>Diet</h3>
-                    <label><input type="checkbox"> Vegetarian</label>
-                    <label><input type="checkbox"> Vegan</label>
+                    <label><input class="tag-filter" type="checkbox" value="vegetarian"> Vegetarian</label>
+                    <label><input class="tag-filter" type="checkbox" value="vegan"> Vegan</label>
                 </div>
                 <div class="filter-group">
                     <h3>Cook time</h3>
-                    <label><input type="checkbox"> Under 30 minutes</label>
-                    <label><input type="checkbox"> 30–60 minutes</label>
+                    <label><input class="tag-filter" type="checkbox" value="under 30 minutes"> Under 30 minutes</label>
+                    <label><input class="tag-filter" type="checkbox" value="30–60 minutes"> 30–60 minutes</label>
                 </div>
                     </aside>
 
@@ -196,6 +196,29 @@
     const mealPlannerTitle = document.querySelector('#meal-planner-title');
     const mealPlanDate = document.querySelector('#meal-plan-date');
     const mealPlannerCancel = document.querySelector('#meal-planner-cancel');
+    const searchInput = document.querySelector('#recipe-search');
+    const tagFilters = document.querySelectorAll('.tag-filter');
+
+    const normalizeTag = (tag) => String(tag || '').trim().toLowerCase();
+
+    const getFilteredRecipes = () => {
+      const searchText = searchInput.value.trim().toLowerCase();
+      const selectedTags = [...tagFilters]
+        .filter((checkbox) => checkbox.checked)
+        .map((checkbox) => normalizeTag(checkbox.value));
+
+      return recipes.filter((recipe) => {
+        const recipeTags = Array.isArray(recipe.tags)
+          ? recipe.tags.map(normalizeTag)
+          : [];
+        const searchableText = [recipe.title, recipe.description, ...recipeTags]
+          .join(' ')
+          .toLowerCase();
+
+        return selectedTags.every((tag) => recipeTags.includes(tag))
+          && searchableText.includes(searchText);
+      });
+    };
 
     const closeMealPlanner = () => {
       mealPlannerPopover.hidden = true;
@@ -304,7 +327,7 @@ function openRecipeDetails(recipe) {
 function renderRecipes() {
   recipeGrid.replaceChildren();
 
-  recipes.forEach((recipe) => {
+  getFilteredRecipes().forEach((recipe) => {
     const card = document.createElement("article");
 
     card.className = "recipe-card";
@@ -348,6 +371,11 @@ function renderRecipes() {
     recipeGrid.appendChild(card);
   });
 }
+
+    tagFilters.forEach((checkbox) => {
+      checkbox.addEventListener('change', renderRecipes);
+    });
+    searchInput.addEventListener('input', renderRecipes);
 window.addEventListener("firebase-recipes-loaded", (event) => {
   recipes = event.detail;
   renderRecipes();

@@ -1,6 +1,7 @@
 import {
   collection,
   addDoc,
+  updateDoc,
   doc,
   deleteDoc,
   getDocs,
@@ -53,7 +54,7 @@ editButton?.addEventListener("click", () => {
       ? recipe.tags.join(", ")
       : recipe.tags || "";
 
-  document.querySelector("#new-recipe-description").value =
+  document.querySelector("#description").value =
     recipe.description || "";
 
   document.querySelector("#prep-time").value =
@@ -82,7 +83,7 @@ editButton?.addEventListener("click", () => {
   document.querySelector("#add-recipe-toggle")?.click();
 
   document
-    .querySelector("#add-recipe-form")
+    .querySelector("#form")
     .scrollIntoView({ behavior: "smooth" });
 });
 const provider = new GoogleAuthProvider();
@@ -127,30 +128,14 @@ onAuthStateChanged(auth, (user) => {
         alert("Please sign in before creating a recipe.");
         return;
       }
-      try {
-  if (editingRecipeId) {
-    await updateDoc(
-      doc(db, "items", editingRecipeId),
-      recipe
-    );
-
-    alert("Recipe updated.");
-    editingRecipeId = null;
-  } else {
-    await addDoc(collection(db, "items"), recipe);
-    alert("Recipe created.");
-  }
-
-  form.reset();
-} catch (error) {
-  console.error("Error saving recipe:", error);
-  alert("Could not save recipe.");
-}
 
       const recipe = {
         name: document.querySelector("#recipe-name").value.trim(),
         image: document.querySelector("#image").value.trim(),
-        tags: document.querySelector("#tags").value.split(",").map((tag) => tag.trim()).filter(Boolean),
+        tags: document.querySelector("#tags").value
+          .split(",")
+          .map((tag) => tag.trim().toLowerCase())
+          .filter(Boolean),
         prepTime: document.querySelector("#prep-time").value.trim(),
         cookTime: document.querySelector("#cook-time").value.trim(),
         totalTime: document.querySelector("#total-time").value.trim(),
@@ -164,48 +149,22 @@ onAuthStateChanged(auth, (user) => {
         createdAt: serverTimestamp()
       };
 
-function renderCalendarItems() {
-  document.querySelectorAll(".day").forEach((day) => {
-    day.querySelectorAll(".calendar-item").forEach((item) => {
-      item.remove();
-    });
-
-    const matchingItems = savedItems.filter(
-      (item) => item.date === day.dataset.date
-    );
-
-    matchingItems.forEach((item) => {
-      const box = document.createElement("button");
-
-      box.type = "button";
-      box.className = "calendar-item";
-      box.textContent = item.name || item.title || "Recipe";
-
-      box.addEventListener("click", () => {
-        if (!item.recipeId) {
-          console.error("Calendar item is missing recipeId:", item);
-          return;
+      try {
+        if (editingRecipeId) {
+          await updateDoc(doc(db, "items", editingRecipeId), recipe);
+          alert("Recipe updated.");
+          editingRecipeId = null;
+        } else {
+          await addDoc(collection(db, "items"), recipe);
+          alert("Recipe created.");
         }
 
-        window.location.href =
-          `cookbook.html?recipeId=${encodeURIComponent(item.recipeId)}`;
-      });
-
-      day.appendChild(box);
-    });
-  });
-}
-
-window.addEventListener("calendar-rendered", renderCalendarItems);
-
-      try {
-        await addDoc(collection(db, "items"), recipe);
         form.reset();
-        alert("Recipe created.");
       } catch (error) {
-        console.error("Error creating recipe:", error);
-        alert("Could not create the recipe.");
+        console.error("Error saving recipe:", error);
+        alert("Could not save recipe.");
       }
+
     });
   }
 });
