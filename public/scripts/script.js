@@ -16,6 +16,54 @@ import {
   onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/13.3.0/firebase-auth.js";
 
+let selectedRecipe = null;
+function openRecipe(recipe) {
+    selectedRecipe = recipe;
+}
+const planButton = document.querySelector("#plan-recipe");
+const dateInput = document.querySelector("#meal-plan-date");
+const mealPlanForm = document.querySelector("#meal-plan-form");
+const mealPlanPopover = document.querySelector("#meal-planner-popover");
+const cancelMealPlan = document.querySelector("#meal-planner-cancel");
+
+mealPlanForm.addEventListener("submit", async () => {
+    
+  const user = auth.currentUser;
+  const selectedDate = dateInput.value;
+
+  if (!user || !selectedRecipe) {
+    alert("Please select a recipe first.");
+    return;
+  }
+
+  if (!selectedDate) {
+    alert("Choose a date first.");
+    return;
+  }
+
+  try {
+    await addDoc(collection(db, "mealPlans"), {
+      recipeId: selectedRecipe.id,
+      date: selectedDate,
+      ownerId: user.uid,
+      createdAt: serverTimestamp()
+    });
+
+    console.log("Meal plan saved:", date);
+    alert("Recipe added to the calendar.");
+
+    mealPlanForm.reset();
+    mealPlanPopover.hidden = true;
+  } catch (error) {
+    console.error("Could not plan recipe:", error);
+  }
+});
+
+cancelMealPlan?.addEventListener("click", () => {
+  mealPlanForm.reset();
+  mealPlanPopover.hidden = true;
+});
+
 const provider = new GoogleAuthProvider();
 
 // Check login status
@@ -61,11 +109,13 @@ onAuthStateChanged(auth, (user) => {
 
       const recipe = {
         name: document.querySelector("#recipe-name").value.trim(),
+        image: document.querySelector("#image").value.trim(),
+        tags: document.querySelector("#tags").value.split(",").map((tag) => tag.trim()).filter(Boolean),
         prepTime: document.querySelector("#prep-time").value.trim(),
         cookTime: document.querySelector("#cook-time").value.trim(),
         totalTime: document.querySelector("#total-time").value.trim(),
-        portionSize: document.querySelector("#portion-size").value.trim(),
-        date: document.querySelector("#date").value,
+        description: document.querySelector("#description").value.trim(),
+        servings: document.querySelector("#servings").value.trim(),
         ingredients: document.querySelector("#ingredients").value.trim(),
         source: document.querySelector("#source").value.trim(),
         instructions: document.querySelector("#instructions").value.trim(),
@@ -107,21 +157,54 @@ window.addEventListener("calendar-rendered", renderCalendarItems);
   }
 });
 
-if (itemsList) {
+
+onAuthStateChanged(auth, (user) => {
+  if (!user) return;
+
   const itemsQuery = query(
     collection(db, "items"),
-    orderBy("createdAt", "desc")
+    where("ownerId", "==", user.uid)
   );
 
-  onSnapshot(itemsQuery, (snapshot) => {
-    const items = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+  onSnapshot(
+    itemsQuery,
+    (snapshot) => {
+      const recipes = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data()
+      }));
 
-    renderItems(items);
-  });
-}
+      window.dispatchEvent(
+        new CustomEvent("firebase-recipes-loaded", {
+          detail: recipes
+        })
+      );
+    },
+    (error) => {
+      console.error("ITEMS listener failed:", error);
+    }
+  );
+
+  const plansQuery = query(
+    collection(db, "mealPlans"),
+    where("ownerId", "==", user.uid)
+  );
+
+  onSnapshot(
+    plansQuery,
+    (snapshot) => {
+      savedItems = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+
+      renderCalendarItems();
+    },
+    (error) => {
+      console.error("MEAL PLANS listener failed:", error);
+    }
+  );
+});
 
 function renderItems(items) {
   itemsList.innerHTML = items
@@ -150,53 +233,78 @@ function escapeHtml(value) {
 let savedItems = [];
 
 onAuthStateChanged(auth, (user) => {
-  console.log("Firebase user:", user);
-
-  if (!user) {
-    console.log("No Firebase user is signed in.");
-    return;
-  }
+  if (!user) return;
 
   const itemsQuery = query(
     collection(db, "items"),
     where("ownerId", "==", user.uid)
   );
 
+  const plansQuery = query(
+    collection(db, "mealPlans"),
+    where("ownerId", "==", user.uid)
+  );
+
   onSnapshot(
     itemsQuery,
+    (snapshot) => {
+      const firebaseRecipes = snapshot.docs.map((doc) => {
+        const data = doc.data();
+
+        return {
+          id: doc.id,
+          title: data.name || "Untitled recipe",
+          name: data.name || "Untitled recipe",
+          image: data.image || "",
+          tags: Array.isArray(data.tags) ? data.tags : [],
+          description: data.description || "",
+          prepTime: data.prepTime || "",
+          cookTime: data.cookTime || "",
+          totalTime: data.totalTime || "",
+          servings: data.servings || "",
+          ingredients: data.ingredients || "",
+          instructions: data.instructions || "",
+          notes: data.notes || "",
+          ownerId: data.ownerId
+        };
+      });
+
+      window.dispatchEvent(
+        new CustomEvent("firebase-recipes-loaded", {
+          detail: firebaseRecipes
+        })
+      );
+    },
+    (error) => {
+      console.error("Items listener failed:", error);
+    }
+  );
+
+  onSnapshot(
+    plansQuery,
     (snapshot) => {
       savedItems = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data()
       }));
 
-      console.log("Items pulled from Firebase:", savedItems);
-
       renderCalendarItems();
     },
     (error) => {
-      console.error("Firebase read failed:", error);
+      console.error("Meal plans listener failed:", error);
     }
   );
 });
 
 function renderCalendarItems() {
-  const days = document.querySelectorAll(".day");
-
-  console.log(
-    "Calendar dates:",
-    [...days].map((day) => day.dataset.date)
-  );
-
-  days.forEach((day) => {
-    day.querySelectorAll(".calendar-item").forEach((element) => {
-      element.remove();
+  document.querySelectorAll(".day").forEach((day) => {
+    day.querySelectorAll(".calendar-item").forEach((item) => {
+      item.remove();
     });
 
-    const matchingItems = savedItems.filter((item) => {
-      console.log("Comparing:", item.date, day.dataset.date);
-      return item.date === day.dataset.date;
-    });
+    const matchingItems = savedItems.filter(
+      (item) => item.date === day.dataset.date
+    );
 
     matchingItems.forEach((item) => {
       const box = document.createElement("div");
@@ -208,5 +316,3 @@ function renderCalendarItems() {
 }
 
 window.addEventListener("calendar-rendered", renderCalendarItems);
-
-renderCalendarItems();
