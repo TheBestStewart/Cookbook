@@ -201,6 +201,7 @@
     };
 
     const openMealPlanner = (recipe, button) => {
+        window.selectedRecipe = recipe;
       mealPlannerTitle.textContent = 'Plan ' + recipe.title;
       mealPlanDate.value = '';
       mealPlannerPopover.hidden = false;

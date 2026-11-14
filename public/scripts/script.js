@@ -16,53 +16,7 @@ import {
   onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/13.3.0/firebase-auth.js";
 
-let selectedRecipe = null;
-function openRecipe(recipe) {
-    selectedRecipe = recipe;
-}
-const planButton = document.querySelector("#plan-recipe");
-const dateInput = document.querySelector("#meal-plan-date");
-const mealPlanForm = document.querySelector("#meal-plan-form");
-const mealPlanPopover = document.querySelector("#meal-planner-popover");
-const cancelMealPlan = document.querySelector("#meal-planner-cancel");
 
-mealPlanForm.addEventListener("submit", async () => {
-    
-  const user = auth.currentUser;
-  const selectedDate = dateInput.value;
-
-  if (!user || !selectedRecipe) {
-    alert("Please select a recipe first.");
-    return;
-  }
-
-  if (!selectedDate) {
-    alert("Choose a date first.");
-    return;
-  }
-
-  try {
-    await addDoc(collection(db, "mealPlans"), {
-      recipeId: selectedRecipe.id,
-      date: selectedDate,
-      ownerId: user.uid,
-      createdAt: serverTimestamp()
-    });
-
-    console.log("Meal plan saved:", date);
-    alert("Recipe added to the calendar.");
-
-    mealPlanForm.reset();
-    mealPlanPopover.hidden = true;
-  } catch (error) {
-    console.error("Could not plan recipe:", error);
-  }
-});
-
-cancelMealPlan?.addEventListener("click", () => {
-  mealPlanForm.reset();
-  mealPlanPopover.hidden = true;
-});
 
 const provider = new GoogleAuthProvider();
 
@@ -314,5 +268,54 @@ function renderCalendarItems() {
     });
   });
 }
+
+const confirmButton = document.querySelector("#confirm-button");
+
+confirmButton?.addEventListener("click", async (event) => {
+  event.preventDefault();
+
+  const recipe = window.selectedRecipe;
+  const date = document.querySelector("#meal-plan-date").value;
+  const user = auth.currentUser;
+
+  if (!recipe?.id) {
+    alert("No recipe was selected.");
+    return;
+  }
+
+  if (!date) {
+    alert("Choose a date first.");
+    return;
+  }
+
+  if (!user) {
+    alert("Please sign in first.");
+    return;
+  }
+
+  try {
+    await addDoc(collection(db, "mealPlans"), {
+      recipeId: recipe.id,
+      name: recipe.name || recipe.title,
+      image: recipe.image || "",
+      description: recipe.description || "",
+      cookTime: recipe.cookTime || "",
+      ingredients: recipe.ingredients || "",
+      instructions: recipe.instructions || "",
+      notes: recipe.notes || "",
+      date,
+      ownerId: user.uid,
+      createdAt: serverTimestamp()
+    });
+
+    console.log("Saved recipe ID:", recipe.id);
+    alert("Recipe added to the calendar.");
+
+    document.querySelector("#meal-plan-date").value = "";
+    document.querySelector("#meal-planner-popover").hidden = true;
+  } catch (error) {
+    console.error("Could not save meal plan:", error);
+  }
+});
 
 window.addEventListener("calendar-rendered", renderCalendarItems);
