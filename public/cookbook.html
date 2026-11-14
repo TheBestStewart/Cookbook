@@ -1,18 +1,616 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cookbook</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: sans-serif;
+        }
+
+        .site-nav {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+            border-bottom: 1px solid;
+        }
+
+        .cookbook-page {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .search-section {
+            padding: 1rem 0;
+            border-bottom: 1px solid;
+        }
+
+        .search-section label {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        #recipe-search {
+            width: 100%;
+            padding: 0.6rem;
+        }
+
+        .cookbook-content {
+            gap: 1rem;
+            padding-top: 1rem;
+        }
+
+        .filters {
+            border: 1px solid;
+            padding: 1rem;
+        }
+
+        .filters h2 {
+            margin-top: 0;
+        }
+
+        .filter-group {
+            margin-bottom: 1rem;
+        }
+
+        .filter-group h3 {
+            margin-bottom: 0.5rem;
+        }
+
+        .recipe-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+        }
+
+        .recipe-card {
+            aspect-ratio: 3 / 2;
+            border: 1px solid;
+            background: transparent;
+        }
+
+        .recipe-card .recipe-open {
+            position: relative;
+            display: block;
+            width: 100%;
+            height: 100%;
+            aspect-ratio: 3 / 2;
+            padding: 0;
+            border: 0;
+            background: transparent;
+            text-align: left;
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        .recipe-image {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border: 0;
+            z-index: 0;
+        }
+
+        .recipe-open::after {
+            content: "";
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            height: 33.333%;
+            background: rgba(255, 255, 255, 0.6);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .recipe-card-text {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 33.333%;
+            padding: 0.25rem 0.75rem;
+            text-align: center;
+            color: black;
+        }
+
+        .recipe-card h3,
+        .recipe-card p {
+            position: static;
+            max-width: 100%;
+            margin: 0;
+            color: inherit;
+        }
+
+        .recipe-card h3 {
+            display: -webkit-box;
+            overflow: hidden;
+            font-size: clamp(0.65rem, 1.5vw, 0.95rem);
+            line-height: 1.1;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+        }
+
+        .recipe-card p {
+            overflow: hidden;
+            font-size: clamp(0.6rem, 1.2vw, 0.8rem);
+            line-height: 1;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .recipe-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 1rem;
+            overflow: hidden;
+            background: white;
+        }
+
+        .recipe-overlay[hidden] {
+            display: none;
+        }
+
+        .recipe-dialog {
+            position: relative;
+            width: min(800px, 100%);
+            max-height: calc(100vh - 2rem);
+            overflow-y: auto;
+            overflow-x: hidden;
+            background: transparent;
+        }
+
+        .recipe-window {
+            position: relative;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto 1fr;
+            width: 100%;
+            max-height: none;
+            overflow: visible;
+            border: 0;
+            background: white;
+        }
+
+        .recipe-picture,
+        .recipe-header,
+        .recipe-ingredients,
+        .recipe-instructions {
+            padding: 1rem;
+        }
+
+        .recipe-picture {
+            min-height: 180px;
+            border: 0;
+            display: grid;
+            place-items: center;
+        }
+
+        .recipe-picture img {
+            display: block;
+            width: 100%;
+            max-height: 360px;
+            object-fit: cover;
+        }
+
+        .recipe-header {
+            border: 0;
+            text-align: left;
+        }
+
+        .recipe-header h2 {
+            margin-top: 0;
+        }
+
+        .recipe-ingredients {
+            border: 0;
+        }
+
+        .recipe-overlay-bar {
+            position: sticky;
+            top: 0;
+            z-index: 11;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 3.5rem;
+            padding: 0.6rem 1rem;
+            border: 0;
+            background: transparent;
+        }
+
+        .recipe-overlay-bar button {
+            border: 1px solid;
+            background: white;
+            cursor: pointer;
+        }
+
+        .recipe-close {
+            display: grid;
+            place-items: center;
+            width: 2.25rem;
+            height: 2.25rem;
+            padding: 0;
+            border: 1px solid;
+            border-radius: 50%;
+            font-size: 1.4rem;
+            line-height: 1;
+        }
+
+        @media (max-width: 700px) {
+
+            .recipe-window {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto;
+            }
+
+        }
+        body {
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .cookbook-page {
+            flex: 1;
+            width: 100%;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .search-section {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        #filters-toggle {
+            flex: 0 0 auto;
+            margin: 0;
+            padding: 0.6rem 0.75rem;
+            border: 1px solid;
+            background: white;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        #recipe-search {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .cookbook-content {
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: row;
+            align-items: stretch;
+            gap: 1rem;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .filters-drawer-wrapper {
+            position: relative;
+            flex: 0 0 0;
+            height: 100%;
+            min-width: 0;
+            overflow: visible;
+            transition: flex-basis 300ms ease;
+        }
+
+        .filters-drawer {
+            display: flex;
+            width: 260px;
+            height: 100%;
+            transform: translateX(-260px);
+            transition: transform 300ms ease;
+        }
+
+        .filters-drawer .filters {
+            position: relative;
+            flex: 0 0 260px;
+            width: 260px;
+            height: 100%;
+            min-width: 0;
+            padding: 1rem;
+            border: 1px solid;
+            background: white;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .cookbook-content:not(.filters-collapsed) .filters-drawer-wrapper {
+            flex-basis: 260px;
+        }
+
+        .cookbook-content:not(.filters-collapsed) .filters-drawer {
+            transform: translateX(0);
+        }
+
+        .recipe-grid {
+            flex: 1 1 auto;
+            min-width: 0;
+            min-height: 0;
+            overflow-y: auto;
+            align-content: start;
+        }
+
+        .triangle {
+            width: 0;
+            height: 0;
+            border-top: 7px solid transparent;
+            border-bottom: 7px solid transparent;
+            border-left: 9px solid currentColor;
+            transition: transform 300ms ease;
+        }
+
+        #filters-toggle[aria-expanded="true"] .triangle {
+            transform: rotate(180deg);
+        }
+
+        @media (max-width: 700px) {
+            .filters-drawer,
+            .filters-drawer .filters {
+                width: 220px;
+            }
+
+            .filters-drawer .filters {
+                flex-basis: 220px;
+            }
+
+            .cookbook-content:not(.filters-collapsed) .filters-drawer-wrapper {
+                flex-basis: 220px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .filters-drawer-wrapper,
+            .filters-drawer,
+            .triangle {
+                transition: none;
+            }
+        }
+
+  </style>
 </head>
+
 <body>
     <header>
-    <nav class="site-nav">
-    <a href="cookbook.html" class="nav-link">Cookbook</a>
-    <a href="planner.html" class="nav-link">Planner</a>
-    <a href="shopping-list.html" class="nav-link">Shopping List</a>
-    </nav>
+        <nav class="site-nav" aria-label="Main navigation">
+            <a href="cookbook.html">Cookbook</a>
+            <a href="planner.html">Planner</a>
+            <a href="shopping-list.html">Shopping List</a>
+        </nav>
     </header>
-<script src="scripts/script.js"></script>
+
+    <main class="cookbook-page">
+        <section class="search-section" aria-label="Recipe search">
+            <button id="filters-toggle" type="button" aria-expanded="false" aria-controls="recipe-filters">
+                <span class="triangle" aria-hidden="true"></span>
+                <span class="toggle-label">Filters</span>
+            </button>
+            <input id="recipe-search" type="search" placeholder="Search recipes...">
+        </section>
+
+        <div class="cookbook-content filters-collapsed">
+            <div class="filters-drawer-wrapper">
+                <div class="filters-drawer">
+                    <aside id="recipe-filters" class="filters" aria-label="Recipe filters">
+                <h2>Filters</h2>
+                <div class="filter-group">
+                    <h3>Meal type</h3>
+                    <label><input type="checkbox"> Breakfast</label>
+                    <label><input type="checkbox"> Lunch</label>
+                    <label><input type="checkbox"> Dinner</label>
+                </div>
+                <div class="filter-group">
+                    <h3>Diet</h3>
+                    <label><input type="checkbox"> Vegetarian</label>
+                    <label><input type="checkbox"> Vegan</label>
+                </div>
+                <div class="filter-group">
+                    <h3>Cook time</h3>
+                    <label><input type="checkbox"> Under 30 minutes</label>
+                    <label><input type="checkbox"> 30–60 minutes</label>
+                </div>
+                    </aside>
+
+                </div>
+            </div>
+
+            <section id="recipe-grid" class="recipe-grid" aria-label="Recipes"></section>
+        </div>
+    </main>
+
+    <div id="recipe-overlay" class="recipe-overlay" hidden aria-hidden="true">
+        <div class="recipe-dialog">
+            <div class="recipe-overlay-bar">
+                <button id="plan-recipe" type="button">Plan recipe</button>
+                <button class="recipe-close" type="button" data-close-overlay aria-label="Close recipe">×</button>
+            </div>
+            <article class="recipe-window" role="dialog" aria-modal="true" aria-labelledby="recipe-title">
+                <section class="recipe-picture" aria-label="Recipe picture">
+                    <img id="recipe-image" alt="">
+                </section>
+                <section class="recipe-header">
+                    <h2 id="recipe-title">Sample Recipe</h2>
+                    <p id="recipe-tags">Tags: Tag one, Tag two</p>
+                    <p id="recipe-description">Recipe description.</p>
+                    <p id="recipe-prep-time">Prep time: 30 minutes</p>
+                    <p id="recipe-cook-time">Cook time: 30 minutes</p>
+                    <p id="recipe-total-time">Total time: 60 minutes</p>
+                    <p id="recipe-serving-size">Serves: 4</p>
+                </section>
+                <section class="recipe-ingredients">
+                    <h3>Ingredients</h3>
+                    <div id="recipe-ingredients-list"></div>
+                </section>
+                <section class="recipe-instructions">
+                    <h3>Instructions</h3>
+                    <div id="recipe-instructions-list"></div>
+                    <div id="recipe-notes"></div>
+                </section>
+            </article>
+        </div>
+    </div>
+
+<script>
+    const recipes = Array.from({ length: 36 }, () => ({
+      title: 'The Best Chicken Parmesan (Parmigiana)',
+      tags: ['Main Course', 'American', 'Italian'],
+      image: 'https://asimplepalate.com/wp-content/uploads/2023/09/baked-chicken-parmesan-scaled.jpg',
+      description: "Learn how to make my family's chicken parmesan recipe! An Italian-American classic made of tender breaded chicken topped with rich tomato sauce, melted cheese, and herbs. My family has enjoyed this recipe for so many years, and it is undoubtedly the best I've ever had. Whether you like the chicken baked to use less oil or pan-fried like the traditional version, this recipe has a method for both.",
+      prepTime: '30 minutes',
+      cookTime: '15 minutes',
+      totalTime: '45 minutes',
+      servings: 6,
+      ingredients: [
+        {
+          group: 'For the Chicken',
+          items: [
+            '3 chicken breasts, sliced in half length-wise to create 6 cutlets',
+            '1/2 cup all-purpose flour',
+            '3 eggs, whisked',
+            '1/3 cup olive oil'
+          ]
+        },
+        {
+          group: 'Breadcrumbs',
+          items: [
+            '1 1/2 cups breadcrumbs',
+            '1/2 cup freshly grated Parmigiano Reggiano',
+            '1/2 tsp salt and pepper',
+            '2 tsp Italian herb blend',
+            '1 tsp garlic powder'
+          ]
+        },
+        {
+          group: 'For the Topping',
+          items: [
+            '6 slices mozzarella',
+            '1 1/2 cups marinara sauce',
+            '1/3 cup freshly grated Parmigiano Reggiano',
+            '2 tbsp fresh basil, chopped'
+          ]
+        }
+      ],
+      instructions: [
+        {
+          group: 'Main Instructions',
+          steps: [
+            'Preheat oven to 425F.',
+            'Tenderize the chicken by pounding the cutlets to 1/2 inch thick, then pat them dry.',
+            'In a shallow dish, mix all of the breadcrumb ingredients together.',
+            'Set up an assembly line with flour, whisked eggs, and breadcrumbs.',
+            'Coat each chicken cutlet in flour, egg, and breadcrumbs, packing the breadcrumbs onto each side.',
+            'Brown the chicken in olive oil for 2 to 3 minutes on both sides until golden.',
+            'Layer the chicken with mozzarella, marinara sauce, and Parmigiano Reggiano. Bake uncovered for 10 to 14 minutes and broil for the final minute.'
+          ]
+        },
+        {
+          group: 'Baked Chicken Parmesan',
+          steps: [
+            'Preheat oven to 450F.',
+            'Place the breaded chicken on a parchment-lined pan and spray or brush it with olive oil.',
+            'Bake for 20 to 25 minutes, flipping halfway through if needed.',
+            'Add mozzarella, sauce, and Parmigiano Reggiano, then bake for 5 additional minutes. Broil on high for the final minute.'
+          ]
+        }
+      ],
+      notes: [
+        'Serve with pasta and an Italian salad.',
+        'Also pairs well with sourdough or crusty Italian bread.'
+      ]
+    }));
+
+    const recipeGrid = document.querySelector('#recipe-grid');
+    const overlay = document.querySelector('#recipe-overlay');
+    const recipeTitle = document.querySelector('#recipe-title');
+    const recipeTags = document.querySelector('#recipe-tags');
+    const recipeImage = document.querySelector('#recipe-image');
+    const recipeDescription = document.querySelector('#recipe-description');
+    const recipePrepTime = document.querySelector('#recipe-prep-time');
+    const recipeCookTime = document.querySelector('#recipe-cook-time');
+    const recipeTotalTime = document.querySelector('#recipe-total-time');
+    const recipeServingSize = document.querySelector('#recipe-serving-size');
+    const recipeIngredients = document.querySelector('#recipe-ingredients-list');
+    const recipeInstructions = document.querySelector('#recipe-instructions-list');
+    const recipeNotes = document.querySelector('#recipe-notes');
+    const filtersToggle = document.querySelector('#filters-toggle');
+    const cookbookContent = document.querySelector('.cookbook-content');
+
+    recipes.forEach((recipe) => {
+      const card = document.createElement('article');
+      card.className = 'recipe-card';
+      card.innerHTML = '<button class="recipe-open" type="button"><img class="recipe-image" src="' + recipe.image + '" alt="' + recipe.title + '"><span class="recipe-card-text"><h3>' + recipe.title + '</h3><p>' + recipe.cookTime + '</p></span></button>';
+      card.querySelector('.recipe-open').addEventListener('click', () => {
+        recipeTitle.textContent = recipe.title;
+        recipeTags.textContent = 'Tags: ' + recipe.tags.join(', ');
+        recipeImage.src = recipe.image;
+        recipeImage.alt = recipe.title;
+        recipeImage.hidden = !recipe.image;
+        recipeDescription.textContent = recipe.description;
+        recipePrepTime.textContent = 'Prep time: ' + recipe.prepTime;
+        recipeCookTime.textContent = 'Cook time: ' + recipe.cookTime;
+        recipeTotalTime.textContent = 'Total time: ' + recipe.totalTime;
+        recipeServingSize.textContent = 'Serves: ' + recipe.servings;
+        recipeIngredients.innerHTML = recipe.ingredients.map((section) =>
+          '<h4>' + section.group + '</h4><ul>' +
+          section.items.map((item) => '<li>' + item + '</li>').join('') +
+          '</ul>'
+        ).join('');
+        recipeInstructions.innerHTML = recipe.instructions.map((section) =>
+          '<h4>' + section.group + '</h4><ol>' +
+          section.steps.map((step) => '<li>' + step + '</li>').join('') +
+          '</ol>'
+        ).join('');
+        recipeNotes.innerHTML = recipe.notes.length
+          ? '<h4>Notes</h4><ul>' + recipe.notes.map((note) => '<li>' + note + '</li>').join('') + '</ul>'
+          : '';
+        overlay.hidden = false;
+        overlay.setAttribute('aria-hidden', 'false');
+      });
+      recipeGrid.appendChild(card);
+    });
+
+    filtersToggle.addEventListener('click', () => {
+      const collapsed = cookbookContent.classList.toggle('filters-collapsed');
+      filtersToggle.setAttribute('aria-expanded', String(!collapsed));
+      filtersToggle.querySelector('.toggle-label').textContent =
+        collapsed ? 'Filters' : 'Hide filters';
+    });
+
+    const closeOverlay = () => {
+      overlay.hidden = true;
+      overlay.setAttribute('aria-hidden', 'true');
+    };
+    document.querySelector('[data-close-overlay]').addEventListener('click', closeOverlay);
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') closeOverlay();
+    });
+  </script>
 </body>
+
 </html>
