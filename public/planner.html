@@ -39,20 +39,7 @@
 
         <section class="planner-main" aria-label="Meal calendar">
           <div id="calendar"></div>
-          <form id="form">
-        <input id="recipe-name" type="text" placeholder="Recipe Name" required>
-        <input id="prep-time" type="text" placeholder="Prep Time">
-        <input id="cook-time" type="text" placeholder="Cook Time">
-        <input id="total-time" type="text" placeholder="Total Time" required>
-        <input id="portion-size" type="text" placeholder="Portion Size">
-        <input id="date" type="date" required>
-        <input id="ingredients" type="text" placeholder="Ingredients" required>
-        <input id="source" type="text" placeholder="Source">
-        <input id="description" type="text" placeholder="Description">
-        <input id="instructions" type="text" placeholder="Instructions" required>
-        <input id="notes" type="text" placeholder="Notes">
-        <button type="submit">Create</button>
-          </form>
+          <section id="mobile-agenda" class="mobile-agenda" aria-label="Daily meal agenda"></section>
         </section>
 
         <aside id="grocery-drawer" class="planner-drawer grocery-drawer" aria-label="Grocery list">
@@ -76,8 +63,48 @@
     const plannerContent = document.querySelector(".planner-content");
     const recipeSearchToggle = document.getElementById("recipe-search-toggle");
     const groceryToggle = document.getElementById("grocery-toggle");
+    const mobileAgenda = document.getElementById("mobile-agenda");
 
     let displayedDate = new Date();
+
+    function renderMobileAgenda() {
+      mobileAgenda.replaceChildren();
+
+      document.querySelectorAll(".day:not(.adjacent-month)").forEach((day) => {
+        const entry = document.createElement("article");
+        entry.className = "agenda-entry";
+
+        const date = new Date(`${day.dataset.date}T12:00:00`);
+        const dateHeading = document.createElement("h2");
+        dateHeading.textContent = date.toLocaleDateString(undefined, {
+          weekday: "long",
+          month: "long",
+          day: "numeric"
+        });
+
+        const meals = [...day.querySelectorAll(".calendar-item")];
+        entry.appendChild(dateHeading);
+
+        if (meals.length) {
+          meals.forEach((meal) => {
+            const mealText = document.createElement("p");
+            mealText.className = "agenda-meal";
+            mealText.textContent = meal.textContent;
+            entry.appendChild(mealText);
+          });
+        } else {
+          const emptyText = document.createElement("p");
+          emptyText.className = "agenda-empty";
+          emptyText.textContent = "No dinner planned";
+          entry.appendChild(emptyText);
+        }
+
+        mobileAgenda.appendChild(entry);
+      });
+    }
+
+    const calendarObserver = new MutationObserver(renderMobileAgenda);
+    calendarObserver.observe(calendar, { childList: true, subtree: true });
 
     recipeSearchToggle.addEventListener("click", () => {
       const isCollapsed = plannerContent.classList.toggle("recipe-search-collapsed");
@@ -172,6 +199,7 @@
       }
 
       window.dispatchEvent(new CustomEvent("calendar-rendered"));
+      renderMobileAgenda();
     }
 
     function updateTodayHighlight() {
