@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <link rel="stylesheet" href="styles/plannerstyle.css">
 </head>
 <body>
     <header>
@@ -13,6 +14,121 @@
     <a href="shopping-list.html" class="nav-link">Shopping List</a>
     </nav>
     </header>
-<script src="scripts/script.js"></script>
+    <main>
+      <div id="month">
+        <h1>Month</h1>
+        <button type="button" id="previous"><p>&#10151</p></button>
+        <button type="button" id="next"><p>&#10151</p></button>
+      </div>
+      <div id="calendar"></div>
+      <form id="form">
+        <input id="recipe-name" type="text" placeholder="Recipe Name" required>
+        <input id="prep-time" type="text" placeholder="Prep Time">
+        <input id="cook-time" type="text" placeholder="Cook Time">
+        <input id="total-time" type="text" placeholder="Total Time" required>
+        <input id="portion-size" type="text" placeholder="Portion Size">
+        <input id="date" type="date" required>
+        <input id="ingredients" type="text" placeholder="Ingredients" required>
+        <input id="source" type="text" placeholder="Source">
+        <input id="description" type="text" placeholder="Description">
+        <input id="instructions" type="text" placeholder="Instructions" required>
+        <input id="notes" type="text" placeholder="Notes">
+        <button type="submit">Create</button>
+      </form>
+    </main>
+<script>
+    const calendar = document.getElementById("calendar");
+    const monthTitle = document.querySelector("h1");
+    const previousButton = document.getElementById("previous");
+    const nextButton = document.getElementById("next");
+
+    let displayedDate = new Date();
+
+    function renderCalendar() {
+      const year = displayedDate.getFullYear();
+      const month = displayedDate.getMonth();
+
+      const today = new Date();
+
+      monthTitle.textContent = displayedDate.toLocaleString("default", {
+        month: "long",
+        year: "numeric"
+      });
+
+      const firstDayOfMonth = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      calendar.replaceChildren();
+
+      let week = document.createElement("div");
+      week.className = "week";
+
+      // Add empty days before the first day of the month
+      for (let i = 0; i < firstDayOfMonth; i++) {
+        const emptyDay = document.createElement("div");
+        emptyDay.className = "empty";
+        week.appendChild(emptyDay);
+      }
+
+      for (let dayNumber = 1; dayNumber <= daysInMonth; dayNumber++) {
+        const day = document.createElement("div");
+        day.className = "day";
+
+        day.dataset.date = `${year}-${String(month + 1).padStart(2, "0")}-${String(dayNumber).padStart(2, "0")}`;
+
+        const paragraph = document.createElement("p");
+        paragraph.textContent = dayNumber;
+
+        const isToday =
+          dayNumber === today.getDate() &&
+          month === today.getMonth() &&
+          year === today.getFullYear();
+
+        if (isToday) {
+          day.classList.add("today");
+        }
+
+        day.appendChild(paragraph);
+        week.appendChild(day);
+
+        // Start a new week after Saturday
+        if (week.children.length === 7) {
+          calendar.appendChild(week);
+          week = document.createElement("div");
+          week.className = "week";
+        }
+      }
+
+      // Add remaining days to the final week
+      if (week.children.length > 0) {
+        while (week.children.length < 7) {
+          const emptyDay = document.createElement("div");
+          emptyDay.className = "empty";
+          week.appendChild(emptyDay);
+        }
+
+        calendar.appendChild(week);
+      }
+      window.dispatchEvent(new CustomEvent("calendar-rendered"));
+    }
+
+    previousButton.addEventListener("click", () => {
+      displayedDate.setDate(1);
+      displayedDate.setMonth(displayedDate.getMonth() - 1);
+      renderCalendar();
+    });
+
+    nextButton.addEventListener("click", () => {
+      displayedDate.setDate(1);
+      displayedDate.setMonth(displayedDate.getMonth() + 1);
+      renderCalendar();
+    });
+
+    renderCalendar();
+
+    // Refresh the current-day styling automatically
+    setInterval(renderCalendar, 60 * 1000);
+</script>
+<script type="module" src="scripts/script.js"></script>
 </body>
 </html>
